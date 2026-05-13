@@ -176,15 +176,15 @@ function UserMenu({
             <p className="truncate text-sm font-medium">{user?.name ?? "Account"}</p>
             <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
           </div>
-          <button
-            type="button"
+          <Link
+            to="/profile"
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
             role="menuitem"
           >
             <UserIcon className="size-4" />
             Profile
-          </button>
+          </Link>
           <button
             type="button"
             onClick={() => {
