@@ -14,6 +14,7 @@ import { useHistory, useTools, useUsage } from "@/lib/queries";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EmailVerificationCard } from "@/components/auth/EmailVerificationCard";
 import { cn } from "@/lib/utils";
 
 export default function Profile() {
@@ -190,6 +191,10 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <EmailVerificationCard />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">

@@ -8,6 +8,7 @@ import {
   registerSchema,
   loginSchema,
   googleAuthSchema,
+  verifyEmailSchema,
 } from "../validators/auth.validator.js";
 
 const router = Router();
@@ -36,5 +37,17 @@ router.post(
 router.post("/refresh", asyncHandler(authController.refresh));
 router.post("/logout", asyncHandler(authController.logout));
 router.get("/me", requireAuth, asyncHandler(authController.me));
+
+router.post(
+  "/send-verification",
+  requireAuth,
+  asyncHandler(authController.sendVerification)
+);
+router.post(
+  "/verify-email",
+  authLimiter,
+  validate(verifyEmailSchema),
+  asyncHandler(authController.verifyEmail)
+);
 
 export default router;

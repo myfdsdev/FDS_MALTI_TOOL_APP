@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import authRoutes from "./auth.routes.js";
 import toolsRoutes from "./tools.routes.js";
 import userRoutes from "./user.routes.js";
+import adminRoutes from "./admin.routes.js";
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.get("/health", (_req, res) => {
 router.use("/auth", authRoutes);
 router.use("/tools", toolsRoutes);
 router.use("/user", userRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;

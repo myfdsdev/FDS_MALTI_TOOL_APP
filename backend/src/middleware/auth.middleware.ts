@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../services/auth.service.js";
 import { User } from "../models/User.model.js";
-import { UnauthorizedError } from "../utils/errors.js";
+import { UnauthorizedError, ForbiddenError } from "../utils/errors.js";
 
 const extractToken = (req: Request): string | null => {
   // Prefer cookie (more secure), fall back to Authorization header
@@ -25,6 +25,17 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * Admin guard — must run after `requireAuth`. Rejects non-admin users.
+ */
+export const requireAdmin = (req: Request, _res: Response, next: NextFunction) => {
+  if (!req.user) return next(new UnauthorizedError("Authentication required"));
+  if (req.user.role !== "admin") {
+    return next(new ForbiddenError("Admin access required"));
+  }
+  next();
 };
 
 /**

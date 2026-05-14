@@ -5,7 +5,10 @@ import {
   Palette, Type, BookOpen, Image as ImageIcon, LayoutTemplate, UserCircle2, PlaySquare,
   Video, Mic, Clapperboard,
   UtensilsCrossed, Dumbbell, Home, Scissors, Stethoscope, GraduationCap,
-  Store, Wand2,
+  Store, Wand2, Zap,
+  PenLine, Layout, Send, Quote, MousePointerClick, FileSignature, Receipt, MessagesSquare,
+  ImagePlus, Camera, ShoppingBag, GalleryHorizontal,
+  IdCard, AtSign, Star, HelpCircle, ScrollText, NotebookPen, Newspaper, CalendarDays,
 } from "lucide-react";
 import type { ToolCategory } from "@/types/api";
 
@@ -17,12 +20,21 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   "whatsapp-writer": MessageCircle,
   "product-description": Tag,
   "reel-script": Film,
+  "hashtag-generator": Hash,
+  "ad-copy-generator": PenLine,
+  "landing-page-copy": Layout,
+  "cold-dm-generator": Send,
   // business
   "business-name": Briefcase,
   "logo-idea": Palette,
   "business-report": FileText,
   "offer-generator": Target,
   "meeting-summary": ListChecks,
+  "tagline-generator": Quote,
+  "cta-generator": MousePointerClick,
+  "proposal-writer": FileSignature,
+  "invoice-message": Receipt,
+  "client-reply": MessagesSquare,
   // design
   "color-palette": Palette,
   "font-pairing": Type,
@@ -36,6 +48,11 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   "faceless-video-idea": Video,
   "voiceover-script": Mic,
   "hook-script-cta": Clapperboard,
+  "video-prompt": Clapperboard,
+  "image-prompt": ImagePlus,
+  "ugc-script": Camera,
+  "product-video-prompt": ShoppingBag,
+  "storyboard-generator": GalleryHorizontal,
   // local
   "restaurant-promo": UtensilsCrossed,
   "gym-marketing": Dumbbell,
@@ -43,6 +60,15 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   "salon-offer": Scissors,
   "doctor-clinic-content": Stethoscope,
   "coaching-class-ad": GraduationCap,
+  // quick
+  "bio-generator": IdCard,
+  "username-generator": AtSign,
+  "review-reply": Star,
+  "faq-generator": HelpCircle,
+  "resume-summary": ScrollText,
+  "cover-letter": NotebookPen,
+  "blog-title": Newspaper,
+  "content-calendar": CalendarDays,
 };
 
 const CATEGORY_ICONS: Record<ToolCategory, LucideIcon> = {
@@ -51,6 +77,7 @@ const CATEGORY_ICONS: Record<ToolCategory, LucideIcon> = {
   design: Palette,
   video: Video,
   local: Store,
+  quick: Zap,
 };
 
 export function getToolIcon(toolId: string): LucideIcon {

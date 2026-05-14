@@ -1,12 +1,22 @@
 import { useMemo, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { ChevronDown, LayoutGrid, History, Sparkles, X } from "lucide-react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { ChevronDown, Lightbulb, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import { useTools } from "@/lib/queries";
+import { useAuthStore } from "@/stores/auth.store";
 import { getCategoryIcon, getToolIcon } from "@/lib/tool-icons";
 import type { Tool, ToolCategory } from "@/types/api";
+
+const CATEGORY_ORDER: ToolCategory[] = [
+  "marketing",
+  "business",
+  "design",
+  "video",
+  "local",
+  "quick",
+];
 
 interface SidebarProps {
   open: boolean;
@@ -59,23 +69,26 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} />
+              <AdminNavItem onNavigate={onClose} />
             </ul>
 
             <div className="mt-6">
               <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Tools
               </p>
-              <CategoryTree onNavigate={onClose} />
+              <ul className="space-y-1">
+                <BusinessIdeasNav onNavigate={onClose} />
+              </ul>
             </div>
           </nav>
 
           <div className="border-t border-sidebar-border p-3">
             <Link
-              to="/dashboard"
+              to="/business-ideas"
               className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground hover:bg-primary/15"
             >
               <Sparkles className="size-4 text-primary" />
-              <span>28 AI tools available</span>
+              <span>50 AI tools available</span>
             </Link>
           </div>
         </div>
@@ -117,37 +130,90 @@ function SidebarItem({
   );
 }
 
-function CategoryTree({ onNavigate }: { onNavigate: () => void }) {
+function AdminNavItem({ onNavigate }: { onNavigate: () => void }) {
+  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  if (!isAdmin) return null;
+  return <SidebarItem to="/admin" icon={Shield} label="Admin" onNavigate={onNavigate} />;
+}
+
+/**
+ * "Business Ideas" — navigates to the catalog page, and the chevron expands a
+ * dropdown of the tool categories (each itself expandable to its tools).
+ */
+function BusinessIdeasNav({ onNavigate }: { onNavigate: () => void }) {
+  const location = useLocation();
+  const inSection = /^\/(business-ideas|tools|category)/.test(location.pathname);
+  const [open, setOpen] = useState(inSection);
+
   const { data, isLoading } = useTools();
 
   const grouped = useMemo(() => {
     if (!data) return [] as Array<{ category: ToolCategory; label: string; tools: Tool[] }>;
-    const order: ToolCategory[] = ["marketing", "business", "design", "video", "local"];
-    return order
-      .filter((c) => data.categories[c])
-      .map((c) => ({
-        category: c,
-        label: data.categories[c].label,
-        tools: data.tools.filter((t) => t.category === c),
-      }));
+    return CATEGORY_ORDER.filter((c) => data.categories[c]).map((c) => ({
+      category: c,
+      label: data.categories[c].label,
+      tools: data.tools.filter((t) => t.category === c),
+    }));
   }, [data]);
 
-  if (isLoading) {
-    return (
-      <ul className="space-y-2 px-3" aria-hidden>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <li key={i} className="h-8 animate-pulse rounded-md bg-muted/50" />
-        ))}
-      </ul>
-    );
-  }
-
   return (
-    <ul className="space-y-1">
-      {grouped.map((g) => (
-        <CategoryGroup key={g.category} group={g} onNavigate={onNavigate} />
-      ))}
-    </ul>
+    <li>
+      <div
+        className={cn(
+          "flex items-center rounded-md transition-colors",
+          inSection
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <NavLink
+          to="/business-ideas"
+          onClick={onNavigate}
+          end
+          className="flex flex-1 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium"
+        >
+          <Lightbulb className="size-4" />
+          Business Ideas
+        </NavLink>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? "Collapse categories" : "Expand categories"}
+          className="rounded-md p-2"
+        >
+          <ChevronDown
+            className={cn("size-4 transition-transform", open && "rotate-180")}
+          />
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            {isLoading ? (
+              <ul className="mt-1 space-y-1.5 pl-3" aria-hidden>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <li key={i} className="h-8 animate-pulse rounded-md bg-muted/50" />
+                ))}
+              </ul>
+            ) : (
+              <ul className="mt-1 space-y-0.5 pl-3">
+                {grouped.map((g) => (
+                  <CategoryGroup key={g.category} group={g} onNavigate={onNavigate} />
+                ))}
+              </ul>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </li>
   );
 }
 
@@ -158,7 +224,12 @@ function CategoryGroup({
   group: { category: ToolCategory; label: string; tools: Tool[] };
   onNavigate: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const hasActiveTool = group.tools.some(
+    (t) => location.pathname === `/tools/${t.id}`,
+  );
+  const onCategoryPage = location.pathname === `/category/${group.category}`;
+  const [open, setOpen] = useState(hasActiveTool);
   const CategoryIcon = getCategoryIcon(group.category);
 
   return (
@@ -167,15 +238,19 @@ function CategoryGroup({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        className={cn(
+          "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          onCategoryPage
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}
       >
         <CategoryIcon className="size-4" />
         <span className="flex-1 text-left">{group.label}</span>
         <span className="text-xs text-muted-foreground">{group.tools.length}</span>
-        <ChevronDown
-          className={cn("size-4 transition-transform", open && "rotate-180")}
-        />
+        <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
       </button>
+
       <AnimatePresence initial={false}>
         {open && (
           <motion.ul

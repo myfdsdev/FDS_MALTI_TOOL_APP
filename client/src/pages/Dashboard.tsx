@@ -25,6 +25,7 @@ const PINNED_CATEGORIES: ToolCategory[] = [
   "design",
   "video",
   "local",
+  "quick",
 ];
 
 export default function Dashboard() {

@@ -12,12 +12,15 @@ export interface ApiError {
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
+export type UserRole = "user" | "admin";
+
 export interface PublicUser {
   id: string;
   email: string;
   name: string;
   avatar?: string;
   provider: "local" | "google";
+  role: UserRole;
   emailVerified?: boolean;
   createdAt?: string;
   lastLoginAt?: string;
@@ -28,7 +31,13 @@ export interface AuthPayload {
   accessToken?: string;
 }
 
-export type ToolCategory = "marketing" | "business" | "design" | "video" | "local";
+export type ToolCategory =
+  | "marketing"
+  | "business"
+  | "design"
+  | "video"
+  | "local"
+  | "quick";
 
 export interface Tool {
   id: string;
@@ -78,5 +87,48 @@ export interface Pagination {
 
 export interface HistoryResponse {
   items: Generation[];
+  pagination: Pagination;
+}
+
+/* ───── Email verification ──────────────────────────────── */
+
+export interface SendVerificationResult {
+  sent: boolean;
+  /** Only present outside production — no real mailer is wired up. */
+  verificationUrl?: string;
+}
+
+/* ───── Admin ───────────────────────────────────────────── */
+
+export interface AdminStats {
+  users: {
+    total: number;
+    verified: number;
+    admins: number;
+    byPlan: Record<Plan, number>;
+  };
+  generations: {
+    total: number;
+    today: number;
+  };
+  topTools: { toolId: string; toolName: string; count: number }[];
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  provider: "local" | "google";
+  role: UserRole;
+  emailVerified: boolean;
+  plan: Plan;
+  totalGenerations: number;
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+export interface AdminUsersResponse {
+  items: AdminUser[];
   pagination: Pagination;
 }

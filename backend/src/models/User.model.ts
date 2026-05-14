@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 export type AuthProvider = "local" | "google";
 export type UserPlan = "free" | "pro" | "team";
+export type UserRole = "user" | "admin";
 
 export interface UserDocument extends Document {
   email: string;
@@ -11,7 +12,10 @@ export interface UserDocument extends Document {
   googleId?: string;
   avatar?: string;
   provider: AuthProvider;
+  role: UserRole;
   emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   plan: UserPlan;
   usage: {
     today: { date: string; count: number };
@@ -41,7 +45,10 @@ const userSchema = new Schema<UserDocument>(
     googleId: { type: String, index: true, sparse: true },
     avatar: String,
     provider: { type: String, enum: ["local", "google"], required: true, default: "local" },
+    role: { type: String, enum: ["user", "admin"], default: "user", index: true },
     emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
     plan: { type: String, enum: ["free", "pro", "team"], default: "free", index: true },
     usage: {
       today: {
@@ -78,6 +85,7 @@ userSchema.methods.toPublicJSON = function () {
     name: this.name,
     avatar: this.avatar,
     provider: this.provider,
+    role: this.role,
     emailVerified: this.emailVerified,
     plan: this.plan,
     usage: this.usage,

@@ -15,6 +15,12 @@ const envSchema = z.object({
 
   GOOGLE_CLIENT_ID: z.string().optional(),
 
+  // Comma-separated list of emails auto-promoted to admin on register/login.
+  ADMIN_EMAILS: z.string().default(""),
+
+  // When set, tool generation uses the real Claude API; otherwise mock output.
+  ANTHROPIC_API_KEY: z.string().optional(),
+
   RATE_LIMIT_AUTH_MAX: z.coerce.number().default(10),
   RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_API_MAX: z.coerce.number().default(60),

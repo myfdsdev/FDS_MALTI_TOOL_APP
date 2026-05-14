@@ -21,6 +21,11 @@ export const googleAuthSchema = z.object({
   idToken: z.string().min(1, "Google ID token is required"),
 });
 
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Verification token is required"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
