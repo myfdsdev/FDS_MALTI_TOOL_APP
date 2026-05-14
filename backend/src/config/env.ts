@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { z } from "zod";
+import { AI_PROVIDERS } from "./ai.config.js";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -18,8 +19,22 @@ const envSchema = z.object({
   // Comma-separated list of emails auto-promoted to admin on register/login.
   ADMIN_EMAILS: z.string().default(""),
 
-  // When set, tool generation uses the real Claude API; otherwise mock output.
+  // Generic provider config. Supports OpenAI-compatible providers when paired
+  // with AI_PROVIDER and AI_BASE_URL.
+  AI_PROVIDER: z.enum(AI_PROVIDERS).optional(),
+  AI_API_KEY: z.string().optional(),
+  AI_MODEL: z.string().optional(),
+  AI_BASE_URL: z.string().url().optional(),
+
+  // Provider-specific fallbacks.
   ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
 
   RATE_LIMIT_AUTH_MAX: z.coerce.number().default(10),
   RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),

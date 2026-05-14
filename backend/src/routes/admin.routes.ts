@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   listUsersQuerySchema,
   updateUserSchema,
+  updateSettingsSchema,
 } from "../validators/admin.validator.js";
 
 const router = Router();
@@ -23,6 +24,14 @@ router.patch(
   "/users/:id",
   validate(updateUserSchema),
   asyncHandler(adminController.updateUser)
+);
+router.delete("/users/:id", asyncHandler(adminController.deleteUser));
+
+router.get("/settings", asyncHandler(adminController.getSettings));
+router.put(
+  "/settings",
+  validate(updateSettingsSchema),
+  asyncHandler(adminController.updateSettings)
 );
 
 export default router;

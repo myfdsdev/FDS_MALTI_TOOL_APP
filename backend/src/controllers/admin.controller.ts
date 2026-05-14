@@ -1,11 +1,73 @@
 import type { Request, Response } from "express";
-import { User } from "../models/User.model.js";
+import { defaultModelFor } from "../config/ai.config.js";
+import { env } from "../config/env.js";
 import { Generation } from "../models/Generation.model.js";
+import { ensureSettings, type SettingsDocument } from "../models/Settings.model.js";
+import { User } from "../models/User.model.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/errors.js";
 import { ok } from "../utils/responses.js";
-import { UnauthorizedError, NotFoundError, BadRequestError } from "../utils/errors.js";
-import type { ListUsersQuery, UpdateUserInput } from "../validators/admin.validator.js";
+import type {
+  ListUsersQuery,
+  UpdateSettingsInput,
+  UpdateUserInput,
+} from "../validators/admin.validator.js";
 
-/** GET /api/admin/stats — workspace-wide overview metrics. */
+function getEnvFallbackConfig() {
+  if (env.AI_API_KEY) {
+    const provider = env.AI_PROVIDER || "openai";
+    return {
+      provider,
+      model: env.AI_MODEL || defaultModelFor(provider),
+      baseUrl: env.AI_BASE_URL || null,
+    };
+  }
+
+  if (env.OPENAI_API_KEY) {
+    return {
+      provider: "openai" as const,
+      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
+      baseUrl: env.OPENAI_BASE_URL || null,
+    };
+  }
+
+  if (env.ANTHROPIC_API_KEY) {
+    return {
+      provider: "anthropic" as const,
+      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
+      baseUrl: null,
+    };
+  }
+
+  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
+  if (geminiKey) {
+    return {
+      provider: "gemini" as const,
+      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
+      baseUrl: null,
+    };
+  }
+
+  return null;
+}
+
+function toSettingsResponse(doc: SettingsDocument) {
+  const key = doc.aiApiKey || doc.anthropicApiKey;
+  const envFallback = getEnvFallbackConfig();
+  const provider = doc.aiProvider || "anthropic";
+
+  return {
+    aiProvider: provider,
+    aiModel: doc.aiModel || defaultModelFor(provider),
+    aiBaseUrl: doc.aiBaseUrl || null,
+    hasApiKey: !!key,
+    keyPreview: key ? `...${key.slice(-4)}` : null,
+    usingEnvFallback: !key && !!envFallback,
+    envProvider: !key ? envFallback?.provider ?? null : null,
+    envModel: !key ? envFallback?.model ?? null : null,
+    envBaseUrl: !key ? envFallback?.baseUrl ?? null : null,
+  };
+}
+
 export const getStats = async (_req: Request, res: Response) => {
   const startOfTodayUTC = new Date(new Date().toISOString().slice(0, 10));
 
@@ -58,15 +120,14 @@ export const getStats = async (_req: Request, res: Response) => {
       total: totalGenerations,
       today: generationsToday,
     },
-    topTools: topTools.map((t) => ({
-      toolId: t._id.toolId,
-      toolName: t._id.toolName,
-      count: t.count,
+    topTools: topTools.map((tool) => ({
+      toolId: tool._id.toolId,
+      toolName: tool._id.toolName,
+      count: tool.count,
     })),
   });
 };
 
-/** GET /api/admin/users — paginated, filterable user list. */
 export const listUsers = async (req: Request, res: Response) => {
   const { page, limit, search, role, plan } = req.query as unknown as ListUsersQuery;
 
@@ -74,8 +135,8 @@ export const listUsers = async (req: Request, res: Response) => {
   if (role) filter.role = role;
   if (plan) filter.plan = plan;
   if (search) {
-    const rx = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    filter.$or = [{ email: rx }, { name: rx }];
+    const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    filter.$or = [{ email: regex }, { name: regex }];
   }
 
   const [items, total] = await Promise.all([
@@ -89,19 +150,18 @@ export const listUsers = async (req: Request, res: Response) => {
   ]);
 
   return ok(res, {
-    items: items.map((u) => ({
-      id: String(u._id),
-      email: u.email,
-      name: u.name,
-      avatar: u.avatar,
-      provider: u.provider,
-      // Pre-existing docs may predate the role field; .lean() skips schema defaults.
-      role: u.role ?? "user",
-      emailVerified: u.emailVerified ?? false,
-      plan: u.plan,
-      totalGenerations: u.usage?.total ?? 0,
-      lastLoginAt: u.lastLoginAt,
-      createdAt: u.createdAt,
+    items: items.map((user) => ({
+      id: String(user._id),
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      provider: user.provider,
+      role: user.role ?? "user",
+      emailVerified: user.emailVerified ?? false,
+      plan: user.plan,
+      totalGenerations: user.usage?.total ?? 0,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
     })),
     pagination: {
       page,
@@ -112,7 +172,6 @@ export const listUsers = async (req: Request, res: Response) => {
   });
 };
 
-/** PATCH /api/admin/users/:id — update a user's role and/or plan. */
 export const updateUser = async (req: Request, res: Response) => {
   if (!req.user) throw new UnauthorizedError();
   const { role, plan } = req.body as UpdateUserInput;
@@ -120,7 +179,6 @@ export const updateUser = async (req: Request, res: Response) => {
   const user = await User.findById(req.params.id);
   if (!user) throw new NotFoundError("User not found");
 
-  // Guard against an admin locking themselves out.
   if (role === "user" && String(user._id) === String(req.user._id)) {
     throw new BadRequestError("You cannot remove your own admin role");
   }
@@ -130,4 +188,47 @@ export const updateUser = async (req: Request, res: Response) => {
   await user.save();
 
   return ok(res, { user: user.toPublicJSON() }, "User updated");
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError();
+
+  if (String(req.params.id) === String(req.user._id)) {
+    throw new BadRequestError("You cannot delete your own account");
+  }
+
+  const user = await User.findById(req.params.id);
+  if (!user) throw new NotFoundError("User not found");
+
+  await Generation.deleteMany({ user: user._id });
+  await user.deleteOne();
+
+  return ok(res, null, "User deleted");
+};
+
+export const getSettings = async (_req: Request, res: Response) => {
+  const settings = await ensureSettings();
+  return ok(res, toSettingsResponse(settings));
+};
+
+export const updateSettings = async (req: Request, res: Response) => {
+  const { aiProvider, aiApiKey, aiModel, aiBaseUrl } = req.body as UpdateSettingsInput;
+  const settings = await ensureSettings();
+
+  if (aiProvider !== undefined) {
+    settings.aiProvider = aiProvider;
+    if (!settings.aiModel) settings.aiModel = defaultModelFor(aiProvider);
+  }
+  if (aiApiKey !== undefined) {
+    settings.aiApiKey = aiApiKey === "" ? undefined : aiApiKey;
+    if (aiApiKey === "") settings.anthropicApiKey = undefined;
+  }
+  if (aiModel !== undefined) settings.aiModel = aiModel;
+  if (aiBaseUrl !== undefined) {
+    settings.aiBaseUrl = aiBaseUrl === "" ? undefined : aiBaseUrl;
+  }
+
+  await settings.save();
+
+  return ok(res, toSettingsResponse(settings), "Settings updated");
 };

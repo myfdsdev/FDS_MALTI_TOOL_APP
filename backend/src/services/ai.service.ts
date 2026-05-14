@@ -1,14 +1,13 @@
-/**
- * AI Service — single integration point for all tools.
- *
- * When ANTHROPIC_API_KEY is set, generation runs against the real Claude API.
- * Otherwise it falls back to mock output so the app still works in dev.
- */
-
-import Anthropic from "@anthropic-ai/sdk";
+import { defaultModelFor } from "../config/ai.config.js";
 import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
 import { getToolById } from "../config/tools.config.js";
+import { ensureSettings } from "../models/Settings.model.js";
+import { buildSystemPrompt, buildUserPrompt } from "./ai/prompt-builder.js";
+import {
+  generateWithProvider,
+  type ResolvedAIConfig,
+} from "./ai/providers.js";
 
 export type AIMode = "mock" | "live";
 
@@ -25,162 +24,158 @@ export interface GenerateResult {
   tokenCount?: number;
 }
 
-const MODEL = "claude-sonnet-4-6";
+async function getAIConfig(): Promise<ResolvedAIConfig | null> {
+  const settings = await ensureSettings();
+  const storedApiKey = settings.aiApiKey || settings.anthropicApiKey;
 
-// Static, cacheable system prompt — describes the JSON output contract.
-const SYSTEM_PROMPT = `You are the content-generation engine behind a suite of marketing, business, design, and creator tools. You receive a tool and its inputs, and produce high-quality, ready-to-use output.
+  if (storedApiKey) {
+    const provider = settings.aiProvider || "anthropic";
+    return {
+      provider,
+      apiKey: storedApiKey,
+      model: settings.aiModel || defaultModelFor(provider),
+      baseUrl: settings.aiBaseUrl || undefined,
+    };
+  }
 
-Reply with ONLY a single JSON object — no prose, no markdown code fences. Choose the shape that best fits the tool:
-- A list of short lines (hooks, captions, ideas, blog titles): {"hooks": string[]}
-- Name / handle / title ideas: {"names": string[]}
-- A color palette: {"palette": [{"name": string, "hex": string}]}
-- A font pairing: {"heading": string, "body": string, "notes": string}
-- A summary with action points: {"summary": string, "actionItems": string[]}
-- Anything else (emails, scripts, ad copy, bios, calendars, AI prompts, proposals): {"text": string} where "text" is well-formatted Markdown.
+  return getAIConfigFromEnv();
+}
 
-Keep output concise, specific, and immediately usable. Aim for 5–8 items in any list.`;
+function getAIConfigFromEnv(): ResolvedAIConfig | null {
+  if (env.AI_API_KEY) {
+    const provider = env.AI_PROVIDER || "openai";
+    return {
+      provider,
+      apiKey: env.AI_API_KEY,
+      model: env.AI_MODEL || defaultModelFor(provider),
+      baseUrl: env.AI_BASE_URL || undefined,
+    };
+  }
 
-let client: Anthropic | null = null;
-function getClient(): Anthropic | null {
-  if (!env.ANTHROPIC_API_KEY) return null;
-  if (!client) client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-  return client;
+  if (env.OPENAI_API_KEY) {
+    return {
+      provider: "openai",
+      apiKey: env.OPENAI_API_KEY,
+      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
+      baseUrl: env.OPENAI_BASE_URL || undefined,
+    };
+  }
+
+  if (env.ANTHROPIC_API_KEY) {
+    return {
+      provider: "anthropic",
+      apiKey: env.ANTHROPIC_API_KEY,
+      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
+    };
+  }
+
+  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
+  if (geminiKey) {
+    return {
+      provider: "gemini",
+      apiKey: geminiKey,
+      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
+    };
+  }
+
+  return null;
 }
 
 export const generate = async (params: GenerateParams): Promise<GenerateResult> => {
   const start = Date.now();
-  const anthropic = getClient();
+  const config = await getAIConfig();
+  const tool = getToolById(params.toolId);
 
-  if (anthropic) {
+  if (config && tool) {
     try {
-      const result = await generateWithClaude(anthropic, params);
-      logger.debug({ toolId: params.toolId, mode: "live" }, "Generation complete");
+      const result = await generateLive(config, tool, params.inputs);
+      logger.debug(
+        { toolId: params.toolId, provider: config.provider, mode: "live" },
+        "Generation complete",
+      );
       return { ...result, mode: "live", durationMs: Date.now() - start };
     } catch (err) {
-      logger.error({ err, toolId: params.toolId }, "Claude generation failed — falling back to mock");
+      logger.error(
+        { err, toolId: params.toolId, provider: config.provider },
+        "AI generation failed; falling back to mock",
+      );
     }
   }
 
-  // Mock fallback (no key, or live call failed).
   const output = buildMockOutput(params);
-  await new Promise((r) => setTimeout(r, 250));
+  await new Promise((resolve) => setTimeout(resolve, 250));
   logger.debug({ toolId: params.toolId, mode: "mock" }, "Generation complete");
   return { output, mode: "mock", durationMs: Date.now() - start };
 };
 
-async function generateWithClaude(
-  anthropic: Anthropic,
-  { toolId, toolName, inputs }: GenerateParams,
+async function generateLive(
+  config: ResolvedAIConfig,
+  tool: NonNullable<ReturnType<typeof getToolById>>,
+  inputs: Record<string, unknown>,
 ): Promise<{ output: unknown; tokenCount?: number }> {
-  const description = getToolById(toolId)?.description;
-  const inputLines = Object.entries(inputs)
-    .map(([k, v]) => `- ${k}: ${v}`)
-    .join("\n");
-
-  const userMessage = [
-    `Tool: ${toolName}`,
-    description ? `Purpose: ${description}` : null,
-    "",
-    "Inputs:",
-    inputLines || "(none)",
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    system: [
-      {
-        type: "text",
-        text: SYSTEM_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [{ role: "user", content: userMessage }],
-  });
-
-  const text = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
+  const system = buildSystemPrompt(tool);
+  const user = buildUserPrompt(tool, inputs);
+  const response = await generateWithProvider(config, system, user);
 
   return {
-    output: parseOutput(text),
-    tokenCount: response.usage.input_tokens + response.usage.output_tokens,
+    output: parseOutput(response.text),
+    tokenCount: response.tokenCount,
   };
 }
 
-/** Parse the model's reply into a structured object; fall back to a text block. */
 function parseOutput(raw: string): unknown {
-  let s = raw.trim();
-  const fenced = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (fenced) s = fenced[1].trim();
+  let text = raw.trim();
+  const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (fenced) text = fenced[1].trim();
+
   try {
-    const parsed = JSON.parse(s);
+    const parsed = JSON.parse(text);
     if (parsed && typeof parsed === "object") return parsed;
   } catch {
-    // not JSON — fall through
+    // Fall back to a text block below.
   }
+
   return { text: raw.trim() };
 }
 
 function buildMockOutput({ toolId, toolName, inputs }: GenerateParams): unknown {
+  const tool = getToolById(toolId);
   const inputSummary = Object.entries(inputs)
-    .map(([k, v]) => `${k}: ${v}`)
+    .map(([key, value]) => `${key}: ${value}`)
     .join(", ");
 
-  switch (toolId) {
-    case "hook-generator":
-      return {
-        hooks: [
-          `POV: You just discovered ${inputs.topic || "this"} and your life changed`,
-          `Nobody is talking about ${inputs.topic || "this"} — and they should be`,
-          `I tried ${inputs.topic || "this"} for 7 days. Here's what happened.`,
-          `The ${inputs.topic || "thing"} mistake 90% of people make`,
-          `Stop scrolling if you care about ${inputs.topic || "this"}`,
-        ],
-      };
-
-    case "color-palette":
-      return {
-        palette: [
-          { name: "Primary", hex: "#2563EB" },
-          { name: "Accent", hex: "#F59E0B" },
-          { name: "Background", hex: "#F8FAFC" },
-          { name: "Text", hex: "#0F172A" },
-          { name: "Muted", hex: "#64748B" },
-        ],
-      };
-
-    case "business-name":
-      return {
-        names: ["Northwind", "BrightForge", "Verve Studio", "Kinetic Co.", "Lumenly"],
-      };
-
-    case "font-pairing":
-      return {
-        heading: "Inter",
-        body: "Source Serif Pro",
-        notes: "Modern, readable, works well for tech and creator brands.",
-      };
-
-    case "meeting-summary":
-      return {
-        summary: `Mock summary for the notes you provided. Inputs: ${inputSummary}`,
-        actionItems: [
-          "Follow up with stakeholders by Friday",
-          "Draft proposal v2",
-          "Schedule design review",
-        ],
-      };
-
-    default:
-      return {
-        text: `This is a mock response from ${toolName}. Inputs received → ${
-          inputSummary || "(none)"
-        }. Set ANTHROPIC_API_KEY in the backend .env to get live AI output.`,
-      };
+  if (!tool) {
+    return {
+      text: `Mock response for ${toolName}. Inputs: ${inputSummary || "(none)"}.`,
+    };
   }
+
+  return Object.fromEntries(
+    tool.prompt.outputFields.map((field) => {
+      if (field.kind === "list") {
+        const count = field.itemCount || 5;
+        return [
+          field.key,
+          Array.from({ length: count }, (_, index) => {
+            const anchor = String(
+              inputs.topic ||
+                inputs.offer ||
+                inputs.productName ||
+                inputs.business ||
+                inputs.brandName ||
+                "your input",
+            );
+            return `${field.label} ${index + 1} for ${anchor}`;
+          }),
+        ];
+      }
+
+      return [
+        field.key,
+        `${field.label}\n\nMock output from ${toolName}. Inputs received: ${
+          inputSummary || "(none)"
+        }. Add a supported API key in your environment or admin settings for live output.`,
+      ];
+    }),
+  );
 }

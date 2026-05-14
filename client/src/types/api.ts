@@ -39,12 +39,24 @@ export type ToolCategory =
   | "local"
   | "quick";
 
+export type ToolInputType = "text" | "textarea" | "select" | "url";
+
+export interface ToolInput {
+  key: string;
+  label: string;
+  type: ToolInputType;
+  placeholder?: string;
+  helpText?: string;
+  required?: boolean;
+  options?: string[];
+}
+
 export interface Tool {
   id: string;
   name: string;
   category: ToolCategory;
   description: string;
-  inputs: string[];
+  inputs: ToolInput[];
 }
 
 export interface CategoryInfo {
@@ -131,4 +143,24 @@ export interface AdminUser {
 export interface AdminUsersResponse {
   items: AdminUser[];
   pagination: Pagination;
+}
+
+export type AiProvider =
+  | "anthropic"
+  | "openai"
+  | "gemini"
+  | "openai-compatible";
+
+export type AiModel = string;
+
+export interface AdminSettings {
+  aiProvider: AiProvider;
+  aiModel: AiModel;
+  aiBaseUrl: string | null;
+  hasApiKey: boolean;
+  keyPreview: string | null;
+  usingEnvFallback: boolean;
+  envProvider: AiProvider | null;
+  envModel: string | null;
+  envBaseUrl: string | null;
 }

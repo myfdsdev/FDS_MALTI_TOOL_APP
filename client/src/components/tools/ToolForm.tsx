@@ -6,35 +6,27 @@ import { Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import type { Tool } from "@/types/api";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import type { Tool, ToolInput } from "@/types/api";
 
-/** Fields that should render as a multi-line textarea. */
-const LONG_FIELDS = /notes|context|features|description|details|services|content/i;
-/** Fields the backend treats as optional. */
-const OPTIONAL_FIELDS = /^(url|recipient)$/i;
-
-/** Known enum-like fields → fixed option lists for a nicer UX. */
-const FIELD_OPTIONS: Record<string, string[]> = {
-  platform: ["Instagram", "TikTok", "LinkedIn", "Facebook", "YouTube", "X / Twitter"],
-  tone: ["Professional", "Casual", "Friendly", "Bold", "Playful", "Luxury"],
-  duration: ["15 seconds", "30 seconds", "60 seconds"],
-  style: ["Modern", "Minimal", "Playful", "Elegant", "Bold", "Vintage"],
-  mood: ["Calm", "Energetic", "Warm", "Cool", "Dark", "Bright"],
-};
-
-function prettify(key: string): string {
-  return key
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/[_-]/g, " ")
-    .replace(/\b\w/g, (m) => m.toUpperCase());
+function inputSchemaFor(field: ToolInput) {
+  const base = z.string();
+  return field.required === false
+    ? base.optional()
+    : base.min(1, `${field.label} is required`);
 }
 
-function placeholderFor(key: string): string {
-  const label = prettify(key).toLowerCase();
-  return `Enter ${label}…`;
+function fallbackPlaceholder(field: ToolInput) {
+  switch (field.type) {
+    case "select":
+      return `Select ${field.label.toLowerCase()}...`;
+    case "textarea":
+      return `Enter ${field.label.toLowerCase()}...`;
+    default:
+      return `Enter ${field.label.toLowerCase()}...`;
+  }
 }
 
 export function ToolForm({
@@ -48,21 +40,17 @@ export function ToolForm({
 }) {
   const schema = useMemo(() => {
     const shape: Record<string, z.ZodTypeAny> = {};
-    for (const key of tool.inputs) {
-      shape[key] = OPTIONAL_FIELDS.test(key)
-        ? z.string().optional()
-        : z.string().min(1, `${prettify(key)} is required`);
+    for (const input of tool.inputs) {
+      shape[input.key] = inputSchemaFor(input);
     }
     return z.object(shape);
   }, [tool.inputs]);
 
   const defaultValues = useMemo(
-    () => Object.fromEntries(tool.inputs.map((k) => [k, ""])),
+    () => Object.fromEntries(tool.inputs.map((input) => [input.key, ""])),
     [tool.inputs],
   );
 
-  // The parent keys this component by tool.id, so a tool switch remounts it
-  // and the form state resets cleanly.
   const {
     register,
     handleSubmit,
@@ -74,63 +62,64 @@ export function ToolForm({
 
   const submit = handleSubmit((values) => {
     const cleaned = Object.fromEntries(
-      Object.entries(values).filter(([, v]) => v != null && String(v).trim() !== ""),
+      Object.entries(values).filter(([, value]) => value != null && String(value).trim() !== ""),
     ) as Record<string, string>;
     onGenerate(cleaned);
   });
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      {tool.inputs.map((key) => {
-        const label = prettify(key);
-        const error = errors[key]?.message as string | undefined;
-        const options = FIELD_OPTIONS[key];
-        const isLong = LONG_FIELDS.test(key);
-        const optional = OPTIONAL_FIELDS.test(key);
+      {tool.inputs.map((input) => {
+        const error = errors[input.key]?.message as string | undefined;
+        const placeholder = input.placeholder || fallbackPlaceholder(input);
 
         return (
-          <div key={key} className="space-y-2">
-            <Label htmlFor={`field-${key}`}>
-              {label}
-              {optional && (
+          <div key={input.key} className="space-y-2">
+            <Label htmlFor={`field-${input.key}`}>
+              {input.label}
+              {input.required === false && (
                 <span className="ml-1 text-xs font-normal text-muted-foreground">
                   (optional)
                 </span>
               )}
             </Label>
 
-            {options ? (
+            {input.type === "select" ? (
               <Select
-                id={`field-${key}`}
+                id={`field-${input.key}`}
                 aria-invalid={!!error}
                 defaultValue=""
-                {...register(key)}
+                {...register(input.key)}
               >
                 <option value="" disabled>
-                  Select {label.toLowerCase()}…
+                  {placeholder}
                 </option>
-                {options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
+                {input.options?.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
                   </option>
                 ))}
               </Select>
-            ) : isLong ? (
+            ) : input.type === "textarea" ? (
               <Textarea
-                id={`field-${key}`}
-                placeholder={placeholderFor(key)}
+                id={`field-${input.key}`}
+                placeholder={placeholder}
                 aria-invalid={!!error}
-                {...register(key)}
+                {...register(input.key)}
               />
             ) : (
               <Input
-                id={`field-${key}`}
-                placeholder={placeholderFor(key)}
+                id={`field-${input.key}`}
+                type={input.type === "url" ? "url" : "text"}
+                placeholder={placeholder}
                 aria-invalid={!!error}
-                {...register(key)}
+                {...register(input.key)}
               />
             )}
 
+            {input.helpText && !error && (
+              <p className="text-xs text-muted-foreground">{input.helpText}</p>
+            )}
             {error && (
               <p className="text-xs text-destructive" role="alert">
                 {error}
@@ -146,7 +135,7 @@ export function ToolForm({
         ) : (
           <Sparkles className="size-4" />
         )}
-        {isPending ? "Generating…" : "Generate"}
+        {isPending ? "Generating..." : "Generate"}
       </Button>
     </form>
   );

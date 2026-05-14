@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth.store";
 import type {
+  AiProvider,
+  AdminSettings,
   AdminStats,
   AdminUsersResponse,
+  AiModel,
   ApiSuccess,
   AuthPayload,
   HistoryResponse,
@@ -30,6 +33,7 @@ export const userKeys = {
 export const adminKeys = {
   stats: ["admin", "stats"] as const,
   users: (params: AdminUsersParams) => ["admin", "users", params] as const,
+  settings: ["admin", "settings"] as const,
 };
 
 export interface AdminUsersParams {
@@ -283,6 +287,49 @@ export function useUpdateUser() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin"] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/admin/users/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin"] });
+    },
+  });
+}
+
+export function useAdminSettings() {
+  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  return useQuery({
+    queryKey: adminKeys.settings,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<AdminSettings>>("/admin/settings");
+      return res.data.data;
+    },
+    enabled: isAdmin,
+    staleTime: 30_000,
+  });
+}
+
+export function useUpdateSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: {
+      aiProvider?: AiProvider;
+      aiApiKey?: string;
+      aiModel?: AiModel;
+      aiBaseUrl?: string;
+    }) => {
+      const res = await api.put<ApiSuccess<AdminSettings>>("/admin/settings", vars);
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(adminKeys.settings, data);
     },
   });
 }
