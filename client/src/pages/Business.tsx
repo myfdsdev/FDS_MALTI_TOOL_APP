@@ -183,3 +183,105 @@ export default function Business() {
     </div>
   );
 }
+
+function ProjectCard({
+  project,
+  reducedMotion,
+  onOpen,
+}: {
+  project: Project;
+  reducedMotion: boolean;
+  onOpen: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteProject = useDeleteProject(project._id);
+
+  const handleDelete = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      await deleteProject.mutateAsync();
+      toast.success(`Deleted "${project.name}"`);
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "Couldn't delete that project"));
+    }
+  };
+
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: reducedMotion ? 0 : 8 },
+        show: { opacity: 1, y: 0 },
+      }}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group relative cursor-pointer rounded-2xl border border-border bg-card p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="size-3 rounded-full"
+              style={{ backgroundColor: project.color }}
+              aria-hidden="true"
+            />
+            <p className="truncate text-lg font-semibold">{project.name}</p>
+          </div>
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+            {project.description || "No description yet."}
+          </p>
+        </div>
+        <ProgressRing value={project.progressPercent} />
+      </div>
+
+      <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="rounded-full bg-muted px-3 py-1">
+          {project.taskCount} task{project.taskCount === 1 ? "" : "s"}
+        </span>
+        <span className="rounded-full bg-muted px-3 py-1">
+          {project.completedCount} complete
+        </span>
+      </div>
+
+      <div
+        className="absolute right-3 top-3"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {confirmDelete ? (
+          <div className="flex items-center gap-1 rounded-md border border-border bg-card p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="rounded px-2 py-1 text-xs hover:bg-accent"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={(event) => void handleDelete(event)}
+              disabled={deleteProject.isPending}
+              className="rounded bg-destructive px-2 py-1 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {deleteProject.isPending ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            aria-label={`Delete ${project.name}`}
+            className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
