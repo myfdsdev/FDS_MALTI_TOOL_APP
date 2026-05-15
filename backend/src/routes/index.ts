@@ -4,6 +4,7 @@ import authRoutes from "./auth.routes.js";
 import toolsRoutes from "./tools.routes.js";
 import userRoutes from "./user.routes.js";
 import adminRoutes from "./admin.routes.js";
+import businessRoutes from "./business.routes.js";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/auth", authRoutes);
 router.use("/tools", toolsRoutes);
 router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
+router.use("/business", businessRoutes);
 
 export default router;

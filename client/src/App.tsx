@@ -6,10 +6,15 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
+import Business from "@/pages/Business";
+import BusinessNotes from "@/pages/BusinessNotes";
+import BusinessLinkSaver from "@/pages/BusinessLinkSaver";
 import BusinessIdeas from "@/pages/BusinessIdeas";
+import { BusinessShell } from "@/components/business/BusinessShell";
 import CategoryPage from "@/pages/CategoryPage";
 import Tool from "@/pages/Tool";
 import History from "@/pages/History";
+import Project from "@/pages/Project";
 import Profile from "@/pages/Profile";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Admin from "@/pages/Admin";
@@ -55,6 +60,13 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/business" element={<BusinessShell />}>
+            <Route index element={<Navigate to="projects" replace />} />
+            <Route path="projects" element={<Business />} />
+            <Route path="notes" element={<BusinessNotes />} />
+            <Route path="link-saver" element={<BusinessLinkSaver />} />
+          </Route>
+          <Route path="/business/projects/:projectId" element={<Project />} />
           <Route path="/business-ideas" element={<BusinessIdeas />} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/tools/:toolId" element={<Tool />} />

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import type { LinkPreview } from "@/types/business";
+import { LinkPreviewCard } from "./LinkPreviewCard";
 
 function prettifyKey(key: string) {
   return key
@@ -144,7 +146,24 @@ function ObjectSection({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-export function ToolOutput({ output }: { output: unknown }) {
+export function ToolOutput({
+  output,
+  toolId,
+  isLoading = false,
+}: {
+  output: unknown;
+  toolId?: string;
+  isLoading?: boolean;
+}) {
+  if (toolId === "link-saver") {
+    return (
+      <LinkPreviewCard
+        preview={(output as LinkPreview | null | undefined) ?? null}
+        isLoading={isLoading}
+      />
+    );
+  }
+
   if (output == null) return null;
 
   if (typeof output === "string") {

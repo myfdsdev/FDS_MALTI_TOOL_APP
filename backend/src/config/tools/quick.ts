@@ -1,7 +1,37 @@
 import type { ToolDefinition } from "./types.js";
-import { SOCIAL_PLATFORMS, listOutput, selectInput, textInput, textOutput, textareaInput } from "./shared.js";
+import {
+  SOCIAL_PLATFORMS,
+  listOutput,
+  selectInput,
+  textInput,
+  textOutput,
+  textareaInput,
+  urlInput,
+} from "./shared.js";
 
 export const quickTools: ToolDefinition[] = [
+  {
+    id: "link-saver",
+    name: "Link Preview & Saver",
+    category: "quick",
+    description: "Paste any URL to get a clean preview card with title, description, favicon, and image.",
+    inputs: [
+      urlInput("url", "URL", "https://example.com", {
+        helpText: "Paste any public URL",
+      }),
+    ],
+    prompt: {
+      instructions: ["URL preview - handled by URL scraper, not AI"],
+      outputFields: [
+        textOutput("title", "Title"),
+        textOutput("description", "Description"),
+        textOutput("favicon", "Favicon URL"),
+        textOutput("image", "Preview image URL"),
+        textOutput("siteName", "Site name"),
+        textOutput("url", "Final URL"),
+      ],
+    },
+  },
   {
     id: "bio-generator",
     name: "AI Bio Generator",

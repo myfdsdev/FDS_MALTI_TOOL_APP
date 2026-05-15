@@ -5,7 +5,7 @@ import {
   Palette, Type, BookOpen, Image as ImageIcon, LayoutTemplate, UserCircle2, PlaySquare,
   Video, Mic, Clapperboard,
   UtensilsCrossed, Dumbbell, Home, Scissors, Stethoscope, GraduationCap,
-  Store, Wand2, Zap,
+  Store, Wand2, Zap, Link2,
   PenLine, Layout, Send, Quote, MousePointerClick, FileSignature, Receipt, MessagesSquare,
   ImagePlus, Camera, ShoppingBag, GalleryHorizontal,
   IdCard, AtSign, Star, HelpCircle, ScrollText, NotebookPen, Newspaper, CalendarDays,
@@ -69,6 +69,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   "cover-letter": NotebookPen,
   "blog-title": Newspaper,
   "content-calendar": CalendarDays,
+  "link-saver": Link2,
 };
 
 const CATEGORY_ICONS: Record<ToolCategory, LucideIcon> = {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { ChevronDown, Lightbulb, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
+import { Briefcase, ChevronDown, Lightbulb, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -68,6 +68,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} />
+              <SidebarItem to="/business" icon={Briefcase} label="Business management" onNavigate={onClose} end={false} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} />
               <AdminNavItem onNavigate={onClose} />
             </ul>
@@ -102,18 +103,20 @@ function SidebarItem({
   icon: Icon,
   label,
   onNavigate,
+  end = true,
 }: {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onNavigate: () => void;
+  end?: boolean;
 }) {
   return (
     <li>
       <NavLink
         to={to}
         onClick={onNavigate}
-        end
+        end={end}
         className={({ isActive }) =>
           cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",

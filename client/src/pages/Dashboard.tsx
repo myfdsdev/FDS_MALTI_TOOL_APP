@@ -5,7 +5,9 @@ import { ArrowRight, History, Sparkles } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
 import { useHistory, useTools, useUsage } from "@/lib/queries";
+import { useTodayTasks } from "@/lib/business.queries";
 import { getCategoryIcon, getToolIcon } from "@/lib/tool-icons";
+import { TodayWidget } from "@/components/business/TodayWidget";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Tool, ToolCategory } from "@/types/api";
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const { data: tools } = useTools();
   const { data: usage } = useUsage();
   const { data: history, isLoading: historyLoading } = useHistory({ page: 1, limit: 6 });
+  const { data: todayTasks = [] } = useTodayTasks();
 
   const popular = useMemo(() => {
     if (!tools) return [];
@@ -98,6 +101,10 @@ export default function Dashboard() {
                 </motion.div>
               ))}
         </motion.div>
+      </section>
+
+      <section className="mt-10">
+        <TodayWidget tasks={todayTasks} />
       </section>
 
       {/* Recent + pinned */}

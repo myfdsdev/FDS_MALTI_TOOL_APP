@@ -3,16 +3,15 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowLeft, RotateCcw, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
-
 import { useTools } from "@/hooks/useTools";
-import { useGenerate, type GenerateResult } from "@/lib/queries";
 import { extractErrorMessage } from "@/lib/api";
+import { useGenerate, type GenerateResult } from "@/lib/queries";
 import { getToolIcon } from "@/lib/tool-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingDots } from "@/components/common/LoadingDots";
 import { ToolForm } from "@/components/tools/ToolForm";
 import { ToolOutput } from "@/components/tools/ToolOutput";
-import { LoadingDots } from "@/components/common/LoadingDots";
 
 export function ToolPage({ toolId }: { toolId: string }) {
   const { getTool, categories, isLoading } = useTools();
@@ -20,7 +19,6 @@ export function ToolPage({ toolId }: { toolId: string }) {
   const generate = useGenerate(toolId);
   const [result, setResult] = useState<GenerateResult | null>(null);
 
-  // Clear stale output when switching tools.
   useEffect(() => {
     setResult(null);
     generate.reset();
@@ -47,7 +45,7 @@ export function ToolPage({ toolId }: { toolId: string }) {
         </div>
         <h1 className="mt-4 text-xl font-semibold tracking-tight">Tool not found</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          We couldn&rsquo;t find a tool with the id <code className="font-mono">{toolId}</code>.
+          We couldn&apos;t find a tool with the id <code className="font-mono">{toolId}</code>.
         </p>
         <Link
           to="/dashboard"
@@ -63,19 +61,18 @@ export function ToolPage({ toolId }: { toolId: string }) {
   const Icon = getToolIcon(tool.id);
   const categoryLabel = categories?.[tool.category]?.label ?? tool.category;
 
-  const onGenerate = async (values: Record<string, string>) => {
+  async function onGenerate(values: Record<string, string>) {
     try {
       const data = await generate.mutateAsync(values);
       setResult(data);
       toast.success("Generated");
-    } catch (err) {
-      toast.error(extractErrorMessage(err, "Generation failed"));
+    } catch (error) {
+      toast.error(extractErrorMessage(error, "Generation failed"));
     }
-  };
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
-      {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -88,19 +85,13 @@ export function ToolPage({ toolId }: { toolId: string }) {
             >
               {categoryLabel}
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-              {tool.name}
-            </h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              {tool.description}
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{tool.name}</h1>
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">{tool.description}</p>
           </div>
         </div>
       </header>
 
-      {/* Two-column workspace */}
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        {/* Inputs */}
         <Card className="self-start">
           <CardHeader>
             <CardTitle className="text-base">Inputs</CardTitle>
@@ -115,7 +106,6 @@ export function ToolPage({ toolId }: { toolId: string }) {
           </CardContent>
         </Card>
 
-        {/* Output */}
         <Card className="self-start">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Output</CardTitle>
@@ -141,12 +131,16 @@ export function ToolPage({ toolId }: { toolId: string }) {
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
               {generate.isPending ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-                  <LoadingDots className="text-primary" />
-                  <p className="text-sm">Generating your result…</p>
-                </div>
+                tool.id === "link-saver" ? (
+                  <ToolOutput toolId={tool.id} output={null} isLoading />
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+                    <LoadingDots className="text-primary" />
+                    <p className="text-sm">Generating your result...</p>
+                  </div>
+                )
               ) : result ? (
-                <ToolOutput output={result.output} />
+                <ToolOutput toolId={tool.id} output={result.output} />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                   <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -154,7 +148,7 @@ export function ToolPage({ toolId }: { toolId: string }) {
                   </div>
                   <p className="text-sm font-medium">Nothing generated yet</p>
                   <p className="max-w-xs text-xs text-muted-foreground">
-                    Fill in the inputs and hit Generate — your result shows up here.
+                    Fill in the inputs and hit Generate. Your result shows up here.
                   </p>
                 </div>
               )}

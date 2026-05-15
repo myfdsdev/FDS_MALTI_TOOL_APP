@@ -4,12 +4,13 @@ import { logger } from "../config/logger.js";
 import { getToolById } from "../config/tools.config.js";
 import { ensureSettings } from "../models/Settings.model.js";
 import { buildSystemPrompt, buildUserPrompt } from "./ai/prompt-builder.js";
+import { scrapeUrl } from "./linkPreview.service.js";
 import {
   generateWithProvider,
   type ResolvedAIConfig,
 } from "./ai/providers.js";
 
-export type AIMode = "mock" | "live";
+export type AIMode = "mock" | "live" | "scrape";
 
 export interface GenerateParams {
   toolId: string;
@@ -83,8 +84,15 @@ function getAIConfigFromEnv(): ResolvedAIConfig | null {
 
 export const generate = async (params: GenerateParams): Promise<GenerateResult> => {
   const start = Date.now();
-  const config = await getAIConfig();
   const tool = getToolById(params.toolId);
+
+  if (params.toolId === "link-saver") {
+    const url = typeof params.inputs.url === "string" ? params.inputs.url : "";
+    const output = await scrapeUrl(url);
+    return { output, mode: "scrape", durationMs: Date.now() - start };
+  }
+
+  const config = await getAIConfig();
 
   if (config && tool) {
     try {

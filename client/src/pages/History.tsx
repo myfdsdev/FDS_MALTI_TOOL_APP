@@ -233,7 +233,7 @@ function Row({
                     Output
                   </h3>
                   <div className="mt-2">
-                    <ToolOutput output={item.output} />
+                    <ToolOutput toolId={item.toolId} output={item.output} />
                   </div>
                 </section>
               </div>
