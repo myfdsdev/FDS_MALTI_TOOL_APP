@@ -39,7 +39,7 @@ export default function Business() {
             <Briefcase className="size-3.5 text-primary" />
             Business workspace
           </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Projects, tasks, and notes</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Projects</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Manage today&apos;s priorities and jump into any project board from one place.
           </p>
