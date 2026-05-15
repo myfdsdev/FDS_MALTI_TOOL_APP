@@ -22,11 +22,11 @@ export function TodayWidget({
 
   if (tasks.length === 0) {
     return (
-      <Card className="overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50">
+      <Card className="overflow-hidden border-emerald-500/20 bg-emerald-500/5">
         <CardContent className="flex items-start gap-4 p-6">
-          <CheckCircle2 className="mt-1 size-6 text-emerald-600" />
+          <CheckCircle2 className="mt-1 size-6 text-emerald-500" />
           <div>
-            <p className="text-lg font-semibold">All clear for today</p>
+            <p className="text-lg font-semibold text-foreground">All clear for today</p>
             <p className="mt-1 text-sm text-muted-foreground">
               There are no overdue or due-today tasks right now.
             </p>

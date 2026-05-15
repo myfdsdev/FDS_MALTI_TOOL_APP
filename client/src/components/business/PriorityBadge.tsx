@@ -2,10 +2,10 @@ import type { TaskPriority } from "@/types/business";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
-  low: "bg-slate-100 text-slate-700",
-  medium: "bg-blue-100 text-blue-700",
-  high: "bg-amber-100 text-amber-700",
-  urgent: "bg-red-100 text-red-700",
+  low: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
+  medium: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  high: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  urgent: "bg-red-500/10 text-red-700 dark:text-red-300",
 };
 
 const DOT_STYLES: Record<TaskPriority, string> = {

@@ -68,7 +68,6 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} />
-              <BusinessManagementNav onNavigate={onClose} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} />
               <AdminNavItem onNavigate={onClose} />
             </ul>
@@ -79,6 +78,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               </p>
               <ul className="space-y-1">
                 <BusinessIdeasNav onNavigate={onClose} />
+                <BusinessManagementNav onNavigate={onClose} />
               </ul>
             </div>
           </nav>

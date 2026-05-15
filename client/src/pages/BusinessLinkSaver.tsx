@@ -302,7 +302,7 @@ export default function BusinessLinkSaver() {
                     </p>
                   </div>
                   {savedSet.has(current.url) && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 className="size-3.5" />
                       Saved
                     </span>

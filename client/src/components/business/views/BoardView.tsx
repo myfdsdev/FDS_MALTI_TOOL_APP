@@ -37,10 +37,10 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   done: "Done",
 };
 const COLUMN_STYLES: Record<TaskStatus, string> = {
-  todo: "bg-slate-100/80",
-  in_progress: "bg-blue-100/70",
-  review: "bg-amber-100/70",
-  done: "bg-emerald-100/70",
+  todo: "bg-slate-500/10",
+  in_progress: "bg-blue-500/10",
+  review: "bg-amber-500/10",
+  done: "bg-emerald-500/10",
 };
 
 function sortTasks(tasks: Task[]) {

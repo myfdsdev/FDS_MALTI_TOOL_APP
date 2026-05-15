@@ -10,7 +10,6 @@ import Business from "@/pages/Business";
 import BusinessNotes from "@/pages/BusinessNotes";
 import BusinessLinkSaver from "@/pages/BusinessLinkSaver";
 import BusinessIdeas from "@/pages/BusinessIdeas";
-import { BusinessShell } from "@/components/business/BusinessShell";
 import CategoryPage from "@/pages/CategoryPage";
 import Tool from "@/pages/Tool";
 import History from "@/pages/History";
@@ -60,12 +59,10 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/business" element={<BusinessShell />}>
-            <Route index element={<Navigate to="projects" replace />} />
-            <Route path="projects" element={<Business />} />
-            <Route path="notes" element={<BusinessNotes />} />
-            <Route path="link-saver" element={<BusinessLinkSaver />} />
-          </Route>
+          <Route path="/business" element={<Navigate to="/business/projects" replace />} />
+          <Route path="/business/projects" element={<Business />} />
+          <Route path="/business/notes" element={<BusinessNotes />} />
+          <Route path="/business/link-saver" element={<BusinessLinkSaver />} />
           <Route path="/business/projects/:projectId" element={<Project />} />
           <Route path="/business-ideas" element={<BusinessIdeas />} />
           <Route path="/category/:category" element={<CategoryPage />} />
