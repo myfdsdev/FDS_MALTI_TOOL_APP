@@ -11,6 +11,7 @@ router.use(requireAuth);
 
 router.get("/usage", asyncHandler(userController.getMyUsage));
 router.get("/history", validate(historyQuerySchema, "query"), asyncHandler(userController.getMyHistory));
+router.delete("/history", asyncHandler(userController.clearHistory));
 router.delete("/history/:id", asyncHandler(userController.deleteHistoryItem));
 
 export default router;

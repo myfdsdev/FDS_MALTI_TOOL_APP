@@ -54,3 +54,13 @@ export const deleteHistoryItem = async (req: Request, res: Response) => {
   await item.save();
   return ok(res, null, "Deleted");
 };
+
+/** DELETE /api/user/history — soft delete all (optionally filtered by toolId) */
+export const clearHistory = async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError();
+  const { toolId } = req.query as { toolId?: string };
+  const filter: Record<string, unknown> = { user: req.user._id, status: "active" };
+  if (toolId) filter.toolId = toolId;
+  const result = await Generation.updateMany(filter, { $set: { status: "deleted" } });
+  return ok(res, { deleted: result.modifiedCount }, "Cleared");
+};

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Briefcase, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Briefcase, Plus, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProjectDialog } from "@/components/business/ProjectDialog";
 import { ProgressRing } from "@/components/business/ProgressRing";
 import { TodayWidget } from "@/components/business/TodayWidget";
-import { useListProjects, useStats, useTodayTasks } from "@/lib/business.queries";
+import { useDeleteProject, useListProjects, useStats, useTodayTasks } from "@/lib/business.queries";
+import { extractErrorMessage } from "@/lib/api";
+import type { Project } from "@/types/business";
 
 export default function Business() {
   const navigate = useNavigate();
@@ -124,42 +127,12 @@ export default function Business() {
             className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           >
             {projects.map((project) => (
-              <motion.button
+              <ProjectCard
                 key={project._id}
-                variants={{
-                  hidden: { opacity: 0, y: reducedMotion ? 0 : 8 },
-                  show: { opacity: 1, y: 0 },
-                }}
-                type="button"
-                onClick={() => navigate(`/business/projects/${project._id}`)}
-                className="rounded-2xl border border-border bg-card p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="size-3 rounded-full"
-                        style={{ backgroundColor: project.color }}
-                        aria-hidden="true"
-                      />
-                      <p className="truncate text-lg font-semibold">{project.name}</p>
-                    </div>
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                      {project.description || "No description yet."}
-                    </p>
-                  </div>
-                  <ProgressRing value={project.progressPercent} />
-                </div>
-
-                <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="rounded-full bg-muted px-3 py-1">
-                    {project.taskCount} task{project.taskCount === 1 ? "" : "s"}
-                  </span>
-                  <span className="rounded-full bg-muted px-3 py-1">
-                    {project.completedCount} complete
-                  </span>
-                </div>
-              </motion.button>
+                project={project}
+                reducedMotion={Boolean(reducedMotion)}
+                onOpen={() => navigate(`/business/projects/${project._id}`)}
+              />
             ))}
           </motion.div>
         )}

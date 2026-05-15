@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ToolOutput } from "@/components/tools/ToolOutput";
 import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "@/lib/api";
-import { useDeleteHistoryItem, useHistory, useTools } from "@/lib/queries";
+import { useClearHistory, useDeleteHistoryItem, useHistory, useTools } from "@/lib/queries";
 import { getToolIcon } from "@/lib/tool-icons";
 import type { Generation, Tool } from "@/types/api";
 
@@ -27,8 +27,26 @@ export default function History() {
     limit: PAGE_SIZE,
     toolId: toolId || undefined,
   });
+  const clearHistory = useClearHistory();
 
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  const onClearAll = async () => {
+    try {
+      const result = await clearHistory.mutateAsync(toolId || undefined);
+      setConfirmClear(false);
+      setExpanded(null);
+      updateParams({ page: "1" });
+      toast.success(
+        result.deleted === 0
+          ? "Nothing to clear"
+          : `Cleared ${result.deleted} item${result.deleted === 1 ? "" : "s"}`
+      );
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "Couldn't clear history"));
+    }
+  };
 
   const toolMap = useMemo(() => {
     const m = new Map<string, Tool>();
@@ -55,7 +73,7 @@ export default function History() {
           </p>
         </div>
 
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <div className="w-full min-w-[200px] sm:w-64">
             <label htmlFor="toolFilter" className="sr-only">
               Filter by tool
@@ -73,6 +91,38 @@ export default function History() {
               ))}
             </Select>
           </div>
+          {data && data.items.length > 0 && (
+            confirmClear ? (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setConfirmClear(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => void onClearAll()}
+                  disabled={clearHistory.isPending}
+                >
+                  {clearHistory.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                  {toolId ? "Clear filtered" : "Clear all"}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmClear(true)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+                {toolId ? "Clear filtered" : "Clear all"}
+              </Button>
+            )
+          )}
         </div>
       </header>
 

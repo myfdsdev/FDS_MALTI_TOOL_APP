@@ -207,6 +207,22 @@ export function useDeleteHistoryItem() {
   });
 }
 
+export function useClearHistory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (toolId?: string) => {
+      const res = await api.delete<ApiSuccess<{ deleted: number }>>("/user/history", {
+        params: toolId ? { toolId } : undefined,
+      });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user", "history"] });
+      qc.invalidateQueries({ queryKey: userKeys.usage });
+    },
+  });
+}
+
 /* ───── Email verification ──────────────────────────────── */
 
 export function useSendVerification() {
