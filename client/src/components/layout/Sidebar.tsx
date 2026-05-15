@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Briefcase, ChevronDown, Lightbulb, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
+import { Briefcase, ChevronDown, FileText, Lightbulb, Link2, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -68,7 +68,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} />
-              <SidebarItem to="/business" icon={Briefcase} label="Business management" onNavigate={onClose} end={false} />
+              <BusinessManagementNav onNavigate={onClose} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} />
               <AdminNavItem onNavigate={onClose} />
             </ul>
@@ -137,6 +137,81 @@ function AdminNavItem({ onNavigate }: { onNavigate: () => void }) {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
   if (!isAdmin) return null;
   return <SidebarItem to="/admin" icon={Shield} label="Admin" onNavigate={onNavigate} />;
+}
+
+const BUSINESS_SUB_ITEMS = [
+  { to: "/business/projects", label: "Projects", icon: Briefcase },
+  { to: "/business/notes", label: "Notes", icon: FileText },
+  { to: "/business/link-saver", label: "Link Saver", icon: Link2 },
+] as const;
+
+function BusinessManagementNav({ onNavigate }: { onNavigate: () => void }) {
+  const location = useLocation();
+  const inSection = location.pathname.startsWith("/business");
+  const [open, setOpen] = useState(inSection);
+
+  return (
+    <li>
+      <div
+        className={cn(
+          "flex items-center rounded-md transition-colors",
+          inSection
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <NavLink
+          to="/business"
+          onClick={onNavigate}
+          className="flex flex-1 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium"
+        >
+          <Briefcase className="size-4" />
+          Business management
+        </NavLink>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? "Collapse business management" : "Expand business management"}
+          className="rounded-md p-2"
+        >
+          <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.ul
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            {BUSINESS_SUB_ITEMS.map(({ to, label, icon: Icon }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "ml-3 mt-1 flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    )
+                  }
+                >
+                  <Icon className="size-3.5" />
+                  {label}
+                </NavLink>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </li>
+  );
 }
 
 /**
