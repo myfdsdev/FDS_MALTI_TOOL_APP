@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { motion } from "motion/react";
-import { Eye, EyeOff, PencilLine } from "lucide-react";
+import { Eye, EyeOff, PencilLine, Sparkles } from "lucide-react";
 import { BuilderSidebar } from "./BuilderSidebar";
 import { BuilderToolbar } from "./BuilderToolbar";
 import { LivePreview } from "./LivePreview";
@@ -199,59 +199,60 @@ export function ResumeBuilder({ resume }: Props) {
         onOpenShare={() => setShareOpen(true)}
       />
 
-      <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6 md:px-6 lg:gap-8">
-        <BuilderSidebar
-          active={activeSection}
-          onJump={onJump}
-          hiddenSections={hiddenSections}
-          onToggleHidden={onToggleHidden}
-        />
+      <main className="min-h-[calc(100vh-4rem)] bg-muted/25">
+        <div className="mx-auto grid max-w-[1680px] gap-4 px-3 py-4 pb-24 sm:px-4 md:px-6 lg:grid-cols-[13rem_minmax(0,0.95fr)_minmax(34rem,1.2fr)] lg:gap-5 lg:py-6 lg:pb-8 xl:grid-cols-[14rem_minmax(29rem,0.9fr)_minmax(42rem,1.15fr)]">
+          <BuilderSidebar
+            active={activeSection}
+            onJump={onJump}
+            hiddenSections={hiddenSections}
+            onToggleHidden={onToggleHidden}
+          />
 
-        {/* FORM PANE */}
-        <div
-          className={cn(
-            "min-w-0 flex-1 space-y-4 lg:max-w-[calc(45%-2rem)]",
-            mobileTab === "preview" && "hidden lg:block"
-          )}
-        >
-          <StarterFillCallout onClick={() => setStarterOpen(true)} />
-          {SECTION_ORDER.map((key) => (
-            <FormSection
-              key={key}
-              sectionKey={key}
-              title={key === "personal" ? "Personal" : SECTION_LABELS[key]}
-              hidden={key !== "personal" && hiddenSections.includes(key)}
-              onToggleHide={key === "personal" ? undefined : () => onToggleHidden(key)}
-              ref={(el) => {
-                if (el) sectionRefs.current.set(key, el);
-                else sectionRefs.current.delete(key);
-              }}
-            >
-              {key === "personal" && <PersonalSection resumeId={resume._id} />}
-              {key === "summary" && <SummarySection resumeId={resume._id} />}
-              {key === "experience" && <ExperienceSection resumeId={resume._id} />}
-              {key === "education" && <EducationSection />}
-              {key === "skills" && <SkillsSection resumeId={resume._id} />}
-              {key === "projects" && <ProjectsSection resumeId={resume._id} />}
-              {key === "certifications" && <CertificationsSection />}
-              {key === "languages" && <LanguagesSection />}
-              {key === "awards" && <AwardsSection />}
-            </FormSection>
-          ))}
-        </div>
+          <div
+            className={cn(
+              "min-w-0 space-y-4",
+              mobileTab === "preview" && "hidden lg:block"
+            )}
+          >
+            <StarterFillCallout onClick={() => setStarterOpen(true)} />
+            {SECTION_ORDER.map((key, index) => (
+              <FormSection
+                key={key}
+                sectionKey={key}
+                sectionIndex={index + 1}
+                title={key === "personal" ? "Personal" : SECTION_LABELS[key]}
+                hidden={key !== "personal" && hiddenSections.includes(key)}
+                onToggleHide={key === "personal" ? undefined : () => onToggleHidden(key)}
+                ref={(el) => {
+                  if (el) sectionRefs.current.set(key, el);
+                  else sectionRefs.current.delete(key);
+                }}
+              >
+                {key === "personal" && <PersonalSection resumeId={resume._id} />}
+                {key === "summary" && <SummarySection resumeId={resume._id} />}
+                {key === "experience" && <ExperienceSection resumeId={resume._id} />}
+                {key === "education" && <EducationSection />}
+                {key === "skills" && <SkillsSection resumeId={resume._id} />}
+                {key === "projects" && <ProjectsSection resumeId={resume._id} />}
+                {key === "certifications" && <CertificationsSection />}
+                {key === "languages" && <LanguagesSection />}
+                {key === "awards" && <AwardsSection />}
+              </FormSection>
+            ))}
+          </div>
 
-        {/* PREVIEW PANE */}
-        <div
-          className={cn(
-            "min-w-0 flex-1 lg:flex-[0_0_55%]",
-            mobileTab === "edit" && "hidden lg:block"
-          )}
-        >
-          <div className="sticky top-[5.5rem] h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <LivePreview {...preview} />
+          <div
+            className={cn(
+              "min-w-0",
+              mobileTab === "edit" && "hidden lg:block"
+            )}
+          >
+            <div className="sticky top-[5.25rem] h-[calc(100vh-6.5rem)] overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+              <LivePreview {...preview} />
+            </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Mobile bottom tab */}
       <div className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-background/95 backdrop-blur lg:hidden">
@@ -302,10 +303,11 @@ interface FormSectionProps {
   hidden?: boolean;
   onToggleHide?: () => void;
   sectionKey: string;
+  sectionIndex: number;
 }
 
 const FormSection = forwardRef<HTMLElement, FormSectionProps>(function FormSection(
-  { title, children, hidden, onToggleHide, sectionKey },
+  { title, children, hidden, onToggleHide, sectionKey, sectionIndex },
   ref
 ) {
   return (
@@ -316,26 +318,29 @@ const FormSection = forwardRef<HTMLElement, FormSectionProps>(function FormSecti
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 shadow-sm",
+        "overflow-hidden rounded-xl border border-border bg-background shadow-sm",
         hidden && "opacity-60"
       )}
     >
-      <header className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </h2>
+      <header className="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-muted/20 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+            {sectionIndex}
+          </span>
+          <h2 className="truncate text-sm font-semibold text-foreground">{title}</h2>
+        </div>
         {onToggleHide && (
           <button
             type="button"
             onClick={onToggleHide}
             aria-label={hidden ? `Show ${title}` : `Hide ${title}`}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             {hidden ? <><EyeOff className="size-3" /> Hidden</> : <><Eye className="size-3" /> Visible</>}
           </button>
         )}
       </header>
-      <div>{children}</div>
+      <div className="p-4 md:p-5">{children}</div>
     </motion.section>
   );
 });
@@ -345,18 +350,22 @@ function StarterFillCallout({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
     >
-      <div>
-        <p className="text-sm font-semibold text-primary">Let AI fill your resume from a short bio</p>
-        <p className="text-xs text-muted-foreground">
-          Paste a few sentences and we'll draft sections you can edit.
-        </p>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Sparkles className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">AI resume starter</p>
+          <p className="truncate text-xs text-muted-foreground">
+            Draft the first version from a short bio.
+          </p>
+        </div>
       </div>
-      <span className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
-        Try it
+      <span className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+        Start
       </span>
     </button>
   );
 }
-

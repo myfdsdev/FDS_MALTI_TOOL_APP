@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTemplateComponent } from "@/components/resume/templates";
 import type {
@@ -38,13 +38,19 @@ export function LivePreview({ content, template, themeColor, fontFamily }: LiveP
 
   const TemplateComponent = useMemo(() => getTemplateComponent(template), [template]);
 
-  const scale = zoom === "fit" ? Math.min(1, (containerWidth - 32) / PAGE_WIDTH) : zoom;
+  const fitScale = containerWidth > 0
+    ? Math.max(0.35, Math.min(1, (containerWidth - 48) / PAGE_WIDTH))
+    : 0.75;
+  const scale = zoom === "fit" ? fitScale : zoom;
   const scaledHeight = PAGE_HEIGHT * scale;
 
   return (
     <div ref={wrapRef} className="relative flex h-full w-full flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <p className="text-xs text-muted-foreground">Live preview · A4</p>
+      <div className="flex min-h-12 items-center justify-between gap-2 border-b border-border bg-background px-4 py-2">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Live preview</p>
+          <p className="text-[11px] text-muted-foreground">A4 document</p>
+        </div>
         <div className="flex items-center gap-1">
           <ZoomButton onClick={() => setZoom(0.5)} active={zoom === 0.5} label="50%">
             50%
@@ -61,9 +67,9 @@ export function LivePreview({ content, template, themeColor, fontFamily }: LiveP
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-muted/40 p-4">
+      <div className="flex-1 overflow-auto bg-muted/50 p-4 sm:p-6">
         <div
-          className="mx-auto origin-top bg-white shadow-2xl"
+          className="mx-auto origin-top overflow-hidden bg-white shadow-2xl ring-1 ring-black/5"
           style={{
             width: PAGE_WIDTH,
             height: PAGE_HEIGHT,
@@ -78,10 +84,6 @@ export function LivePreview({ content, template, themeColor, fontFamily }: LiveP
             fontFamily={fontFamily}
           />
         </div>
-      </div>
-
-      <div className="border-t border-border px-3 py-1.5 text-center text-[10px] text-muted-foreground">
-        Page break indicator every {PAGE_HEIGHT}px when exporting
       </div>
     </div>
   );
@@ -104,7 +106,7 @@ function ZoomButton({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "rounded px-2 py-1 text-xs transition-colors",
+        "rounded-md px-2 py-1 text-xs transition-colors",
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
       )}
     >
@@ -112,6 +114,3 @@ function ZoomButton({
     </button>
   );
 }
-
-// Reserved for the future when icon-only buttons are needed without inline styles.
-export const _zoomIcons = { ZoomIn, ZoomOut };

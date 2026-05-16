@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Share2,
   Sparkles,
-  Wand2,
   ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -77,8 +76,8 @@ export function BuilderToolbar(props: Props) {
   };
 
   return (
-    <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-3 md:px-6">
+    <div className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1680px] flex-wrap items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4 md:px-6">
         <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/business/resumes")}>
           <ArrowLeft className="size-4" />
           <span className="hidden sm:inline">All resumes</span>
@@ -88,12 +87,12 @@ export function BuilderToolbar(props: Props) {
           value={props.title}
           onChange={(e) => props.onTitleChange(e.target.value)}
           placeholder="Untitled Resume"
-          className="h-9 min-w-[140px] flex-1 sm:max-w-xs"
+          className="h-9 min-w-[150px] flex-1 bg-background sm:max-w-sm"
         />
 
         <SaveIndicator status={props.saveStatus} onRetry={props.onRetrySave} />
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">
             <Select
               value={props.template}
@@ -197,7 +196,7 @@ function SaveIndicator({
         {status === "saving" && (
           <>
             <Loader2 className="size-3 animate-spin" />
-            Saving…
+            Saving...
           </>
         )}
         {status === "saved" && <span className="text-emerald-600">Saved</span>}
@@ -207,10 +206,10 @@ function SaveIndicator({
             onClick={onRetry}
             className="flex items-center gap-1 rounded-md bg-destructive/10 px-2 py-0.5 text-destructive"
           >
-            <RefreshCw className="size-3" /> Failed — retry
+            <RefreshCw className="size-3" /> Failed - retry
           </button>
         )}
-        {status === "idle" && <span className="opacity-0">·</span>}
+        {status === "idle" && <span className="opacity-0">.</span>}
       </motion.div>
     </AnimatePresence>
   );
@@ -276,7 +275,6 @@ function ColorPicker({
               className="h-9"
             />
           </div>
-          <Wand2 className="size-0" />
         </div>
       </PopoverContent>
     </Popover>
