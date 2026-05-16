@@ -7,7 +7,7 @@ export interface GenerationDocument extends Document {
   category: string;
   inputs: Record<string, unknown>;
   output: unknown;
-  mode: "mock" | "live" | "scrape";
+  mode: "mock" | "live" | "scrape" | "utility";
   status: "active" | "deleted";
   durationMs?: number;
   tokenCount?: number;
@@ -23,7 +23,7 @@ const generationSchema = new Schema<GenerationDocument>(
     category: { type: String, required: true },
     inputs: { type: Schema.Types.Mixed, default: {} },
     output: Schema.Types.Mixed,
-    mode: { type: String, enum: ["mock", "live", "scrape"], default: "mock" },
+    mode: { type: String, enum: ["mock", "live", "scrape", "utility"], default: "mock" },
     status: { type: String, enum: ["active", "deleted"], default: "active", index: true },
     durationMs: Number,
     tokenCount: Number,

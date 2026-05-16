@@ -16,6 +16,7 @@ const POPULAR_TOOL_IDS = [
   "hook-generator",
   "caption-generator",
   "email-writer",
+  "url-shortener",
   "color-palette",
   "business-name",
   "reel-script",

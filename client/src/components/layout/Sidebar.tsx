@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Briefcase, ChevronDown, FileText, FileUser, Lightbulb, Link2, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
+import { Briefcase, ChevronDown, FileText, FileUser, Lightbulb, LineChart, Link2, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -24,6 +24,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { data } = useTools();
+  const toolCount = data?.tools.length;
+
   return (
     <>
       {/* Mobile overlay */}
@@ -89,7 +92,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground hover:bg-primary/15"
             >
               <Sparkles className="size-4 text-primary" />
-              <span>50 AI tools available</span>
+              <span>{toolCount ? `${toolCount} tools available` : "Tools available"}</span>
             </Link>
           </div>
         </div>
@@ -141,6 +144,7 @@ function AdminNavItem({ onNavigate }: { onNavigate: () => void }) {
 
 const BUSINESS_SUB_ITEMS = [
   { to: "/business/projects", label: "Projects", icon: Briefcase },
+  { to: "/business/reports", label: "Growth Reports", icon: LineChart },
   { to: "/business/notes", label: "Notes", icon: FileText },
   { to: "/business/link-saver", label: "Link Saver", icon: Link2 },
   { to: "/business/resumes", label: "Resumes", icon: FileUser },

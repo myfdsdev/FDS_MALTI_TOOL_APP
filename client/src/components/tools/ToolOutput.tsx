@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { LinkPreview } from "@/types/business";
@@ -146,6 +146,76 @@ function ObjectSection({ data }: { data: Record<string, unknown> }) {
   );
 }
 
+function ShortUrlSection({ data }: { data: Record<string, unknown> }) {
+  const shortUrl = typeof data.shortUrl === "string" ? data.shortUrl : "";
+  const originalUrl = typeof data.originalUrl === "string" ? data.originalUrl : "";
+  const code = typeof data.code === "string" ? data.code : "";
+  const clicks = typeof data.clicks === "number" ? data.clicks : 0;
+
+  if (!shortUrl) return <ObjectSection data={data} />;
+
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Short URL
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This link redirects to the original URL and belongs to your account.
+          </p>
+        </div>
+        <CopyButton value={shortUrl} />
+      </div>
+
+      <div className="rounded-md border border-border bg-background p-3">
+        <div className="flex items-start gap-2">
+          <Link2 className="mt-0.5 size-4 shrink-0 text-primary" />
+          <a
+            href={shortUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="min-w-0 flex-1 break-all text-sm font-medium text-primary hover:underline"
+          >
+            {shortUrl}
+          </a>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a
+          href={shortUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium hover:bg-accent"
+        >
+          <ExternalLink className="size-3.5" />
+          Open
+        </a>
+        <CopyButton value={shortUrl} className="h-9 px-3" label="Copy link" />
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-xs text-muted-foreground sm:grid-cols-2">
+        <div className="rounded-md border border-border bg-background p-3">
+          <dt className="font-medium uppercase tracking-wide">Code</dt>
+          <dd className="mt-1 break-all text-foreground">{code}</dd>
+        </div>
+        <div className="rounded-md border border-border bg-background p-3">
+          <dt className="font-medium uppercase tracking-wide">Clicks</dt>
+          <dd className="mt-1 tabular-nums text-foreground">{clicks}</dd>
+        </div>
+      </dl>
+
+      {originalUrl && (
+        <div className="mt-3 rounded-md border border-border bg-background p-3 text-xs">
+          <p className="font-medium uppercase tracking-wide text-muted-foreground">Original URL</p>
+          <p className="mt-1 break-all text-foreground">{originalUrl}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function ToolOutput({
   output,
   toolId,
@@ -162,6 +232,10 @@ export function ToolOutput({
         isLoading={isLoading}
       />
     );
+  }
+
+  if (toolId === "url-shortener" && isPlainObject(output)) {
+    return <ShortUrlSection data={output} />;
   }
 
   if (output == null) return null;

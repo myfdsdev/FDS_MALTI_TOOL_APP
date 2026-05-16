@@ -136,7 +136,9 @@ export function ToolPage({ toolId }: { toolId: string }) {
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
                     <LoadingDots className="text-primary" />
-                    <p className="text-sm">Generating your result...</p>
+                    <p className="text-sm">
+                      {tool.id === "url-shortener" ? "Creating your short link..." : "Generating your result..."}
+                    </p>
                   </div>
                 )
               ) : result ? (

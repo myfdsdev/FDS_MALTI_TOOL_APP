@@ -9,7 +9,7 @@ export function Footer() {
           <span className="text-sm font-semibold tracking-tight">Multitool</span>
         </Link>
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Multitool. 28 AI tools, one workspace.
+          {new Date().getFullYear()} Multitool. AI and business tools, one workspace.
         </p>
         <nav className="flex items-center gap-4 text-xs text-muted-foreground">
           <Link to="/login" className="hover:text-foreground">

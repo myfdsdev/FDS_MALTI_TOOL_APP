@@ -8,8 +8,10 @@ import type { Request } from "express";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import apiRouter from "./routes/index.js";
+import { redirectShortLink } from "./controllers/shortLink.controller.js";
 import { requestId } from "./middleware/requestId.middleware.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.middleware.js";
+import { asyncHandler } from "./utils/asyncHandler.js";
 
 export const createApp = (): Application => {
   const app = express();
@@ -60,6 +62,7 @@ export const createApp = (): Application => {
   });
 
   // API routes
+  app.get("/s/:code", asyncHandler(redirectShortLink));
   app.use("/api", apiRouter);
 
   // 404 + error handlers (must be last)

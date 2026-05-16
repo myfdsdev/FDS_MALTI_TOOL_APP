@@ -33,6 +33,29 @@ export const quickTools: ToolDefinition[] = [
     },
   },
   {
+    id: "url-shortener",
+    name: "URL Shortener",
+    category: "quick",
+    description: "Create a real short link that redirects to any public URL.",
+    inputs: [
+      urlInput("url", "Long URL", "https://example.com/long-page", {
+        helpText: "Paste a full public URL starting with http:// or https://",
+      }),
+      textInput("alias", "Custom alias", "my-offer", {
+        required: false,
+        helpText: "Optional: 3-40 letters, numbers, dashes, or underscores",
+      }),
+    ],
+    prompt: {
+      instructions: ["URL shortener - handled by the short-link service, not AI"],
+      outputFields: [
+        textOutput("shortUrl", "Short URL"),
+        textOutput("originalUrl", "Original URL"),
+        textOutput("code", "Code"),
+      ],
+    },
+  },
+  {
     id: "bio-generator",
     name: "AI Bio Generator",
     category: "quick",

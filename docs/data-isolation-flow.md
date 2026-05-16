@@ -29,7 +29,7 @@ flowchart TD
 - Link Saver local storage moved from global keys to scoped keys like `multitool.user.<id>.business.linkSaver.history`.
 - Legacy global Link Saver keys are removed when the page opens, so old shared browser data stops appearing.
 - Backend project count updates and note filters now enforce ownership with the logged-in user id.
-- Admin user deletion now also deletes that user's projects, tasks, notes, resumes, and generation history.
+- Admin user deletion now also deletes that user's projects, tasks, notes, resumes, Growth Reports, short links, and generation history.
 
 ## Rule Of Thumb
 

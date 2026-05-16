@@ -27,7 +27,7 @@ export default function BusinessIdeas() {
         <div>
           <p className="text-xs font-medium text-primary">Business Ideas</p>
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            Every AI tool, in one place
+            Every tool, in one place
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {isLoading

@@ -48,6 +48,7 @@ export const generateForTool = async (req: Request, res: Response) => {
     toolName: tool.name,
     inputs: req.body,
     user: req.user,
+    requestBaseUrl: `${req.protocol}://${req.get("host")}`,
   });
 
   // Persist to history (fire-and-forget; failure shouldn't block response)

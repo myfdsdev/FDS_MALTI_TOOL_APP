@@ -1,6 +1,6 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
-const PRIVATE_QUERY_ROOTS = new Set(["user", "business", "resumes", "admin"]);
+const PRIVATE_QUERY_ROOTS = new Set(["user", "business", "resumes", "reports", "admin"]);
 
 function queryRoot(queryKey: QueryKey): string | null {
   const [root] = queryKey;

@@ -4,15 +4,18 @@ import type { UserDocument } from "../models/User.model.js";
 import { resolveAIConfigForUser } from "./ai/config.js";
 import { buildSystemPrompt, buildUserPrompt } from "./ai/prompt-builder.js";
 import { scrapeUrl } from "./linkPreview.service.js";
+import { createShortLink } from "./shortLink.service.js";
 import { generateWithProvider, type ResolvedAIConfig } from "./ai/providers.js";
+import { UnauthorizedError } from "../utils/errors.js";
 
-export type AIMode = "mock" | "live" | "scrape";
+export type AIMode = "mock" | "live" | "scrape" | "utility";
 
 export interface GenerateParams {
   toolId: string;
   toolName: string;
   inputs: Record<string, unknown>;
   user?: UserDocument;
+  requestBaseUrl?: string;
 }
 
 export interface GenerateResult {
@@ -30,6 +33,17 @@ export const generate = async (params: GenerateParams): Promise<GenerateResult> 
     const url = typeof params.inputs.url === "string" ? params.inputs.url : "";
     const output = await scrapeUrl(url);
     return { output, mode: "scrape", durationMs: Date.now() - start };
+  }
+
+  if (params.toolId === "url-shortener") {
+    if (!params.user) throw new UnauthorizedError();
+    const output = await createShortLink({
+      user: params.user,
+      originalUrl: params.inputs.url,
+      customAlias: params.inputs.alias,
+      baseUrl: params.requestBaseUrl || "",
+    });
+    return { output, mode: "utility", durationMs: Date.now() - start };
   }
 
   const config = resolveAIConfigForUser(params.user);

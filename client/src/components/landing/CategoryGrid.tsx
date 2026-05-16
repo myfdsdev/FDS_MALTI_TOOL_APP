@@ -15,8 +15,7 @@ export function CategoryGrid() {
           Built for every part of your business
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-          One workspace for every AI tool your business needs. Pick a tool and start
-          generating.
+          One workspace for the tools your business needs. Pick a tool and start working.
         </p>
       </div>
 
@@ -40,7 +39,7 @@ export function CategoryGrid() {
               </div>
               <h3 className="mt-4 text-base font-semibold">Business Idea Generator</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                {toolCount} AI tools
+                {toolCount} tools
               </p>
               <div className="mt-4 flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-primary">
                 Explore

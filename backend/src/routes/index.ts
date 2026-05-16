@@ -7,6 +7,8 @@ import adminRoutes from "./admin.routes.js";
 import businessRoutes from "./business.routes.js";
 import resumeRoutes from "./resume.routes.js";
 import publicResumeRoutes from "./publicResume.routes.js";
+import reportRoutes from "./report.routes.js";
+import publicReportRoutes from "./publicReport.routes.js";
 
 const router = Router();
 
@@ -31,6 +33,8 @@ router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/business", businessRoutes);
 router.use("/business/resumes", resumeRoutes);
+router.use("/business/reports", reportRoutes);
 router.use("/public", publicResumeRoutes);
+router.use("/public/reports", publicReportRoutes);
 
 export default router;

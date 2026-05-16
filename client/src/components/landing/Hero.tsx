@@ -14,13 +14,13 @@ export function Hero() {
         className="relative z-10 mx-auto max-w-2xl text-center"
       >
         <span className="inline-flex items-center rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-          28 AI tools · One workspace
+          AI and business tools - One workspace
         </span>
         <h1 className="mt-5 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
           Every AI tool your business needs, in one place.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
-          Hooks, captions, emails, brand kits, video scripts, local ads — generate
+          Hooks, captions, emails, brand kits, video scripts, local ads - generate
           them all from a single, fast workspace.
         </p>
         <div className="mt-7 flex items-center justify-center gap-3">

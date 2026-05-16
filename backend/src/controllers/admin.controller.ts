@@ -2,10 +2,12 @@ import type { Request, Response } from "express";
 import { defaultModelFor } from "../config/ai.config.js";
 import { env } from "../config/env.js";
 import { Generation } from "../models/Generation.model.js";
+import { GrowthReport } from "../models/GrowthReport.model.js";
 import { Note } from "../models/Note.model.js";
 import { Project } from "../models/Project.model.js";
 import { Resume } from "../models/Resume.model.js";
 import { ensureSettings, type SettingsDocument } from "../models/Settings.model.js";
+import { ShortLink } from "../models/ShortLink.model.js";
 import { Task } from "../models/Task.model.js";
 import { User } from "../models/User.model.js";
 import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/errors.js";
@@ -206,9 +208,11 @@ export const deleteUser = async (req: Request, res: Response) => {
 
   await Promise.all([
     Generation.deleteMany({ user: user._id }),
+    GrowthReport.deleteMany({ user: user._id }),
     Note.deleteMany({ user: user._id }),
     Project.deleteMany({ user: user._id }),
     Resume.deleteMany({ user: user._id }),
+    ShortLink.deleteMany({ user: user._id }),
     Task.deleteMany({ user: user._id }),
   ]);
   await user.deleteOne();

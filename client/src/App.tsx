@@ -15,6 +15,11 @@ import BusinessIdeas from "@/pages/BusinessIdeas";
 import Resumes from "@/pages/Resumes";
 import ResumeBuilderPage from "@/pages/ResumeBuilderPage";
 import PublicResume from "@/pages/PublicResume";
+import ReportsListPage from "@/pages/business/ReportsListPage";
+import NewReportPage from "@/pages/business/NewReportPage";
+import ReportViewerPage from "@/pages/business/ReportViewerPage";
+import BusinessCalendarPage from "@/pages/business/BusinessCalendarPage";
+import PublicReport from "@/pages/PublicReport";
 import CategoryPage from "@/pages/CategoryPage";
 import Tool from "@/pages/Tool";
 import History from "@/pages/History";
@@ -58,7 +63,10 @@ export default function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname.split("/")[1] || "root"}>
-        <Route path="/" element={<Landing />} />
+        <Route
+          path="/"
+          element={status === "authenticated" ? <Navigate to="/dashboard" replace /> : <Landing />}
+        />
         <Route
           path="/login"
           element={status === "authenticated" ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -69,6 +77,7 @@ export default function App() {
         />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/r/:slug" element={<PublicResume />} />
+        <Route path="/reports/r/:slug" element={<PublicReport />} />
 
         <Route
           element={
@@ -80,6 +89,10 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/business" element={<BusinessManagement />} />
           <Route path="/business/projects" element={<Business />} />
+          <Route path="/business/calendar" element={<BusinessCalendarPage />} />
+          <Route path="/business/reports" element={<ReportsListPage />} />
+          <Route path="/business/reports/new" element={<NewReportPage />} />
+          <Route path="/business/reports/:id" element={<ReportViewerPage />} />
           <Route path="/business/notes" element={<BusinessNotes />} />
           <Route path="/business/link-saver" element={<BusinessLinkSaver />} />
           <Route path="/business/resumes" element={<Resumes />} />

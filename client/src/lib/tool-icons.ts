@@ -70,6 +70,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   "blog-title": Newspaper,
   "content-calendar": CalendarDays,
   "link-saver": Link2,
+  "url-shortener": Link2,
 };
 
 const CATEGORY_ICONS: Record<ToolCategory, LucideIcon> = {

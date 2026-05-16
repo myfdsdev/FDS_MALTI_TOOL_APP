@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+
   return (
     <AuthLayout>
       <motion.div
@@ -21,7 +23,7 @@ export default function LoginPage() {
           <CardContent className="space-y-5">
             <LoginForm />
             <Divider>or</Divider>
-            <GoogleButton />
+            <GoogleButton onSuccess={() => navigate("/dashboard", { replace: true })} />
           </CardContent>
         </Card>
         <p className="mt-6 text-center text-xs text-muted-foreground">
