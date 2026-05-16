@@ -17,7 +17,7 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
     if (!token) throw new UnauthorizedError("Authentication required");
 
     const payload = verifyAccessToken(token);
-    const user = await User.findById(payload.userId);
+    const user = await User.findById(payload.userId).select("+aiSettings.aiApiKey");
     if (!user) throw new UnauthorizedError("User no longer exists");
 
     req.user = user;
@@ -47,7 +47,7 @@ export const optionalAuth = async (req: Request, _res: Response, next: NextFunct
     const token = extractToken(req);
     if (!token) return next();
     const payload = verifyAccessToken(token);
-    const user = await User.findById(payload.userId);
+    const user = await User.findById(payload.userId).select("+aiSettings.aiApiKey");
     if (user) req.user = user;
     next();
   } catch {

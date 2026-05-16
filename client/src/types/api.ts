@@ -78,6 +78,33 @@ export interface UsageStatus {
   total: number;
 }
 
+export type AiProvider =
+  | "anthropic"
+  | "openai"
+  | "gemini"
+  | "openai-compatible";
+
+export type AiModel = string;
+
+export interface UserAISettings {
+  aiProvider: AiProvider;
+  aiModel: AiModel;
+  aiBaseUrl: string | null;
+  hasApiKey: boolean;
+  keyPreview: string | null;
+  usingEnvFallback: boolean;
+  envProvider: AiProvider | null;
+  envModel: string | null;
+  envBaseUrl: string | null;
+}
+
+export interface UpdateUserAISettingsInput {
+  aiProvider?: AiProvider;
+  aiApiKey?: string;
+  aiModel?: AiModel;
+  aiBaseUrl?: string;
+}
+
 export interface Generation {
   _id: string;
   user: string;
@@ -144,14 +171,6 @@ export interface AdminUsersResponse {
   items: AdminUser[];
   pagination: Pagination;
 }
-
-export type AiProvider =
-  | "anthropic"
-  | "openai"
-  | "gemini"
-  | "openai-compatible";
-
-export type AiModel = string;
 
 export interface AdminSettings {
   aiProvider: AiProvider;

@@ -1,14 +1,10 @@
-import { defaultModelFor } from "../config/ai.config.js";
-import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
 import { getToolById } from "../config/tools.config.js";
-import { ensureSettings } from "../models/Settings.model.js";
+import type { UserDocument } from "../models/User.model.js";
+import { resolveAIConfigForUser } from "./ai/config.js";
 import { buildSystemPrompt, buildUserPrompt } from "./ai/prompt-builder.js";
 import { scrapeUrl } from "./linkPreview.service.js";
-import {
-  generateWithProvider,
-  type ResolvedAIConfig,
-} from "./ai/providers.js";
+import { generateWithProvider, type ResolvedAIConfig } from "./ai/providers.js";
 
 export type AIMode = "mock" | "live" | "scrape";
 
@@ -16,6 +12,7 @@ export interface GenerateParams {
   toolId: string;
   toolName: string;
   inputs: Record<string, unknown>;
+  user?: UserDocument;
 }
 
 export interface GenerateResult {
@@ -23,63 +20,6 @@ export interface GenerateResult {
   mode: AIMode;
   durationMs: number;
   tokenCount?: number;
-}
-
-async function getAIConfig(): Promise<ResolvedAIConfig | null> {
-  const settings = await ensureSettings();
-  const storedApiKey = settings.aiApiKey || settings.anthropicApiKey;
-
-  if (storedApiKey) {
-    const provider = settings.aiProvider || "anthropic";
-    return {
-      provider,
-      apiKey: storedApiKey,
-      model: settings.aiModel || defaultModelFor(provider),
-      baseUrl: settings.aiBaseUrl || undefined,
-    };
-  }
-
-  return getAIConfigFromEnv();
-}
-
-function getAIConfigFromEnv(): ResolvedAIConfig | null {
-  if (env.AI_API_KEY) {
-    const provider = env.AI_PROVIDER || "openai";
-    return {
-      provider,
-      apiKey: env.AI_API_KEY,
-      model: env.AI_MODEL || defaultModelFor(provider),
-      baseUrl: env.AI_BASE_URL || undefined,
-    };
-  }
-
-  if (env.OPENAI_API_KEY) {
-    return {
-      provider: "openai",
-      apiKey: env.OPENAI_API_KEY,
-      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
-      baseUrl: env.OPENAI_BASE_URL || undefined,
-    };
-  }
-
-  if (env.ANTHROPIC_API_KEY) {
-    return {
-      provider: "anthropic",
-      apiKey: env.ANTHROPIC_API_KEY,
-      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
-    };
-  }
-
-  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
-  if (geminiKey) {
-    return {
-      provider: "gemini",
-      apiKey: geminiKey,
-      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
-    };
-  }
-
-  return null;
 }
 
 export const generate = async (params: GenerateParams): Promise<GenerateResult> => {
@@ -92,7 +32,7 @@ export const generate = async (params: GenerateParams): Promise<GenerateResult> 
     return { output, mode: "scrape", durationMs: Date.now() - start };
   }
 
-  const config = await getAIConfig();
+  const config = resolveAIConfigForUser(params.user);
 
   if (config && tool) {
     try {
@@ -182,7 +122,7 @@ function buildMockOutput({ toolId, toolName, inputs }: GenerateParams): unknown 
         field.key,
         `${field.label}\n\nMock output from ${toolName}. Inputs received: ${
           inputSummary || "(none)"
-        }. Add a supported API key in your environment or admin settings for live output.`,
+        }. Add a supported API key in your profile settings or environment for live output.`,
       ];
     }),
   );

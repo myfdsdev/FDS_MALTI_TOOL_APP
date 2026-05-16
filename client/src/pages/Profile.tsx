@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmailVerificationCard } from "@/components/auth/EmailVerificationCard";
+import { AiSettingsCard } from "@/components/profile/AiSettingsCard";
 import { cn } from "@/lib/utils";
 
 export default function Profile() {
@@ -141,6 +142,8 @@ export default function Profile() {
           </div>
         </div>
       </section>
+
+      <AiSettingsCard />
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">

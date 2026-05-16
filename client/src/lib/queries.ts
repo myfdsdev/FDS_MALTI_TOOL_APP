@@ -14,6 +14,8 @@ import type {
   PublicUser,
   SendVerificationResult,
   ToolsListResponse,
+  UpdateUserAISettingsInput,
+  UserAISettings,
   UsageStatus,
 } from "@/types/api";
 
@@ -28,6 +30,7 @@ export const toolKeys = {
 export const userKeys = {
   all: (userId?: string | null) => ["user", scopeKey(userId)] as const,
   usage: (userId?: string | null) => [...userKeys.all(userId), "usage"] as const,
+  aiSettings: (userId?: string | null) => [...userKeys.all(userId), "ai-settings"] as const,
   history: (userId: string | null | undefined, page: number, limit: number, toolId?: string) =>
     [...userKeys.all(userId), "history", { page, limit, toolId }] as const,
 };
@@ -159,6 +162,35 @@ export function useUsage() {
     },
     enabled: isAuthed && Boolean(userId),
     staleTime: 30_000,
+  });
+}
+
+export function useUserAISettings() {
+  const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const userId = useAuthStore((s) => s.user?.id);
+  return useQuery({
+    queryKey: userKeys.aiSettings(userId),
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<UserAISettings>>("/user/ai-settings");
+      return res.data.data;
+    },
+    enabled: isAuthed && Boolean(userId),
+    staleTime: 30_000,
+  });
+}
+
+export function useUpdateUserAISettings() {
+  const qc = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
+
+  return useMutation({
+    mutationFn: async (input: UpdateUserAISettingsInput) => {
+      const res = await api.put<ApiSuccess<UserAISettings>>("/user/ai-settings", input);
+      return res.data.data;
+    },
+    onSuccess: (settings) => {
+      qc.setQueryData(userKeys.aiSettings(userId), settings);
+    },
   });
 }
 

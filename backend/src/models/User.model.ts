@@ -1,9 +1,17 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
 import bcrypt from "bcryptjs";
+import { AI_PROVIDERS, defaultModelFor, type AIProvider } from "../config/ai.config.js";
 
 export type AuthProvider = "local" | "google";
 export type UserPlan = "free" | "pro" | "team";
 export type UserRole = "user" | "admin";
+
+export interface UserAISettings {
+  aiProvider: AIProvider;
+  aiApiKey?: string;
+  aiBaseUrl?: string;
+  aiModel: string;
+}
 
 export interface UserDocument extends Document {
   email: string;
@@ -22,6 +30,7 @@ export interface UserDocument extends Document {
     month: { yearMonth: string; count: number };
     total: number;
   };
+  aiSettings: UserAISettings;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -60,6 +69,16 @@ const userSchema = new Schema<UserDocument>(
         count: { type: Number, default: 0 },
       },
       total: { type: Number, default: 0 },
+    },
+    aiSettings: {
+      aiProvider: {
+        type: String,
+        enum: AI_PROVIDERS,
+        default: "anthropic",
+      },
+      aiApiKey: { type: String, select: false },
+      aiBaseUrl: { type: String },
+      aiModel: { type: String, default: defaultModelFor("anthropic") },
     },
     lastLoginAt: Date,
   },

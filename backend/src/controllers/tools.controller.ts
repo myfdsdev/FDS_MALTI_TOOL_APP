@@ -47,6 +47,7 @@ export const generateForTool = async (req: Request, res: Response) => {
     toolId: tool.id,
     toolName: tool.name,
     inputs: req.body,
+    user: req.user,
   });
 
   // Persist to history (fire-and-forget; failure shouldn't block response)

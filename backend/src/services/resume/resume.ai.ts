@@ -1,17 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { defaultModelFor } from "../../config/ai.config.js";
-import { env } from "../../config/env.js";
 import { logger } from "../../config/logger.js";
-import { ensureSettings } from "../../models/Settings.model.js";
 import type {
   ATSIssue,
   ResumeContent,
   ResumeDocument,
 } from "../../models/Resume.model.js";
-import {
-  generateWithProvider,
-  type ResolvedAIConfig,
-} from "../ai/providers.js";
+import type { UserDocument } from "../../models/User.model.js";
+import { resolveAIConfigForUser } from "../ai/config.js";
+import { generateWithProvider } from "../ai/providers.js";
 import {
   atsCheck,
   generateBullets,
@@ -25,55 +21,6 @@ export type ResumeAIMode = "live" | "mock";
 interface ResumeAIResult<T> {
   output: T;
   mode: ResumeAIMode;
-}
-
-async function getAIConfig(): Promise<ResolvedAIConfig | null> {
-  const settings = await ensureSettings();
-  const storedApiKey = settings.aiApiKey || settings.anthropicApiKey;
-
-  if (storedApiKey) {
-    const provider = settings.aiProvider || "anthropic";
-    return {
-      provider,
-      apiKey: storedApiKey,
-      model: settings.aiModel || defaultModelFor(provider),
-      baseUrl: settings.aiBaseUrl || undefined,
-    };
-  }
-
-  if (env.AI_API_KEY) {
-    const provider = env.AI_PROVIDER || "openai";
-    return {
-      provider,
-      apiKey: env.AI_API_KEY,
-      model: env.AI_MODEL || defaultModelFor(provider),
-      baseUrl: env.AI_BASE_URL || undefined,
-    };
-  }
-  if (env.OPENAI_API_KEY) {
-    return {
-      provider: "openai",
-      apiKey: env.OPENAI_API_KEY,
-      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
-      baseUrl: env.OPENAI_BASE_URL || undefined,
-    };
-  }
-  if (env.ANTHROPIC_API_KEY) {
-    return {
-      provider: "anthropic",
-      apiKey: env.ANTHROPIC_API_KEY,
-      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
-    };
-  }
-  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
-  if (geminiKey) {
-    return {
-      provider: "gemini",
-      apiKey: geminiKey,
-      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
-    };
-  }
-  return null;
 }
 
 function parseJsonObject(raw: string): Record<string, unknown> {
@@ -94,11 +41,12 @@ function parseJsonObject(raw: string): Record<string, unknown> {
 }
 
 async function callLive<T>(
+  account: UserDocument | undefined,
   system: string,
   user: string,
   fallback: T
 ): Promise<ResumeAIResult<T>> {
-  const config = await getAIConfig();
+  const config = resolveAIConfigForUser(account);
   if (!config) {
     return { output: fallback, mode: "mock" };
   }
@@ -184,7 +132,7 @@ function ensureIdsOnContent(input: Partial<ResumeContent>): ResumeContent {
   };
 }
 
-export async function runStarterFill(bio: string): Promise<ResumeContent> {
+export async function runStarterFill(bio: string, account?: UserDocument): Promise<ResumeContent> {
   const fallback: Partial<ResumeContent> = {
     personal: {
       fullName: "[Your full name]",
@@ -235,6 +183,7 @@ export async function runStarterFill(bio: string): Promise<ResumeContent> {
   };
 
   const { output } = await callLive<Partial<ResumeContent>>(
+    account,
     starterFill.system,
     starterFill.user({ bio }),
     fallback
@@ -248,7 +197,7 @@ export async function runImproveField(args: {
   currentValue: string;
   context?: string;
   resume: ResumeContent;
-}): Promise<{ suggestion: string }> {
+}, account?: UserDocument): Promise<{ suggestion: string }> {
   const fallback = {
     suggestion:
       args.currentValue
@@ -257,6 +206,7 @@ export async function runImproveField(args: {
   };
 
   const { output } = await callLive<{ suggestion?: string }>(
+    account,
     improveField.system,
     improveField.user(args),
     fallback
@@ -273,7 +223,7 @@ export async function runGenerateBullets(args: {
   role: string;
   company: string;
   existingBullets: string[];
-}): Promise<{ bullets: string[] }> {
+}, account?: UserDocument): Promise<{ bullets: string[] }> {
   const fallback = {
     bullets: [
       `Drove a major initiative as ${args.role} that improved a key metric.`,
@@ -284,6 +234,7 @@ export async function runGenerateBullets(args: {
   };
 
   const { output } = await callLive<{ bullets?: unknown[] }>(
+    account,
     generateBullets.system,
     generateBullets.user(args),
     fallback
@@ -298,7 +249,7 @@ export async function runGenerateBullets(args: {
 export async function runSuggestSkills(args: {
   jobTitle: string;
   currentSkills: string[];
-}): Promise<{ skills: { category: string; items: string[] }[] }> {
+}, account?: UserDocument): Promise<{ skills: { category: string; items: string[] }[] }> {
   const fallback = {
     skills: [
       { category: "Core", items: ["Communication", "Problem solving", "Ownership"] },
@@ -307,6 +258,7 @@ export async function runSuggestSkills(args: {
   };
 
   const { output } = await callLive<{ skills?: unknown }>(
+    account,
     suggestSkills.system,
     suggestSkills.user(args),
     fallback
@@ -327,7 +279,7 @@ export async function runSuggestSkills(args: {
   return { skills: normalized.length ? normalized : fallback.skills };
 }
 
-export async function runAtsCheck(resume: ResumeDocument): Promise<{
+export async function runAtsCheck(resume: ResumeDocument, account?: UserDocument): Promise<{
   score: number;
   issues: ATSIssue[];
   suggestions: string[];
@@ -352,7 +304,7 @@ export async function runAtsCheck(resume: ResumeDocument): Promise<{
     score?: number;
     issues?: unknown;
     suggestions?: unknown;
-  }>(atsCheck.system, atsCheck.user({ resume: resume.content }), fallback);
+  }>(account, atsCheck.system, atsCheck.user({ resume: resume.content }), fallback);
 
   const rawScore = Number(output?.score);
   const score = Number.isFinite(rawScore)

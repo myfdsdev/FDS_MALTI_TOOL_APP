@@ -168,7 +168,7 @@ export const aiStarterFill = asyncHandler(async (req: Request, res: Response) =>
   const { bio } = req.body as StarterFillInput;
 
   await checkAndConsume(authedReq.user);
-  const filledContent = await runStarterFill(bio);
+  const filledContent = await runStarterFill(bio, authedReq.user);
   resume.content = filledContent;
   resume.markModified("content");
   resume.lastEditedAt = new Date();
@@ -184,12 +184,15 @@ export const aiImproveField = asyncHandler(async (req: Request, res: Response) =
 
   await checkAndConsume(authedReq.user);
   const currentValue = String(pickByPath(resume.content as unknown as Record<string, unknown>, field) ?? "");
-  const result = await runImproveField({
-    field,
-    currentValue,
-    context,
-    resume: resume.content,
-  });
+  const result = await runImproveField(
+    {
+      field,
+      currentValue,
+      context,
+      resume: resume.content,
+    },
+    authedReq.user
+  );
   return ok(res, result);
 });
 
@@ -199,7 +202,7 @@ export const aiGenerateBullets = asyncHandler(async (req: Request, res: Response
   const input = req.body as GenerateBulletsInput;
 
   await checkAndConsume(authedReq.user);
-  const result = await runGenerateBullets(input);
+  const result = await runGenerateBullets(input, authedReq.user);
   return ok(res, result);
 });
 
@@ -209,7 +212,7 @@ export const aiSuggestSkills = asyncHandler(async (req: Request, res: Response) 
   const input = req.body as SuggestSkillsInput;
 
   await checkAndConsume(authedReq.user);
-  const result = await runSuggestSkills(input);
+  const result = await runSuggestSkills(input, authedReq.user);
   return ok(res, result);
 });
 
@@ -218,7 +221,7 @@ export const aiAtsCheck = asyncHandler(async (req: Request, res: Response) => {
   const resume = await findOwnedResumeOr404(authedReq.user._id, req.params.id);
 
   await checkAndConsume(authedReq.user);
-  const result = await runAtsCheck(resume);
+  const result = await runAtsCheck(resume, authedReq.user);
   resume.atsScore = result.score;
   resume.atsIssues = result.issues;
   resume.atsSuggestions = result.suggestions;
