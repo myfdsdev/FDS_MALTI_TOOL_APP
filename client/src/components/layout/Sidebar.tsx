@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Briefcase, ChevronDown, FileText, Lightbulb, Link2, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
+import { Briefcase, ChevronDown, FileText, FileUser, Lightbulb, Link2, LayoutGrid, History, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -143,6 +143,8 @@ const BUSINESS_SUB_ITEMS = [
   { to: "/business/projects", label: "Projects", icon: Briefcase },
   { to: "/business/notes", label: "Notes", icon: FileText },
   { to: "/business/link-saver", label: "Link Saver", icon: Link2 },
+  { to: "/business/resumes", label: "Resumes", icon: FileUser },
+  { to: "/business/resumes/templates", label: "Resume templates", icon: Sparkles },
 ] as const;
 
 function BusinessManagementNav({ onNavigate }: { onNavigate: () => void }) {
