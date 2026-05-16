@@ -13,7 +13,6 @@ import BusinessNotes from "@/pages/BusinessNotes";
 import BusinessLinkSaver from "@/pages/BusinessLinkSaver";
 import BusinessIdeas from "@/pages/BusinessIdeas";
 import Resumes from "@/pages/Resumes";
-import ResumeTemplates from "@/pages/ResumeTemplates";
 import ResumeBuilderPage from "@/pages/ResumeBuilderPage";
 import PublicResume from "@/pages/PublicResume";
 import CategoryPage from "@/pages/CategoryPage";
@@ -84,7 +83,7 @@ export default function App() {
           <Route path="/business/notes" element={<BusinessNotes />} />
           <Route path="/business/link-saver" element={<BusinessLinkSaver />} />
           <Route path="/business/resumes" element={<Resumes />} />
-          <Route path="/business/resumes/templates" element={<ResumeTemplates />} />
+          <Route path="/business/resumes/templates" element={<Navigate to="/business/resumes" replace />} />
           <Route path="/business/resumes/:id" element={<ResumeBuilderPage />} />
           <Route path="/business/projects/:projectId" element={<Project />} />
           <Route path="/business-ideas" element={<BusinessIdeas />} />

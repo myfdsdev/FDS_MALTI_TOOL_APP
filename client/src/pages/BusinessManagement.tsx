@@ -39,12 +39,6 @@ const WORKSPACE_TOOLS = [
     description: "Build, improve, share, and export polished resumes from your workspace.",
     icon: FileUser,
   },
-  {
-    to: "/business/resumes/templates",
-    title: "Resume templates",
-    description: "Browse resume layouts before starting or redesigning a resume.",
-    icon: Sparkles,
-  },
 ] as const;
 
 export default function BusinessManagement() {

@@ -144,7 +144,6 @@ const BUSINESS_SUB_ITEMS = [
   { to: "/business/notes", label: "Notes", icon: FileText },
   { to: "/business/link-saver", label: "Link Saver", icon: Link2 },
   { to: "/business/resumes", label: "Resumes", icon: FileUser },
-  { to: "/business/resumes/templates", label: "Resume templates", icon: Sparkles },
 ] as const;
 
 function BusinessManagementNav({ onNavigate }: { onNavigate: () => void }) {
