@@ -21,7 +21,9 @@ import { LinkPreviewCard } from "@/components/tools/LinkPreviewCard";
 import { useGenerate } from "@/lib/queries";
 import { useCreateNote, useListProjects } from "@/lib/business.queries";
 import { extractErrorMessage } from "@/lib/api";
+import { removeStorageKeys, useScopedLocalStorageState } from "@/lib/user-storage";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
 import type { LinkPreview } from "@/types/business";
 
 const HISTORY_KEY = "business.linkSaver.history";
@@ -40,23 +42,8 @@ interface HistoryEntry {
   savedAt: string;
 }
 
-function loadJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function persistJson(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* quota or privacy mode — ignore */
-  }
-}
+const EMPTY_HISTORY: HistoryEntry[] = [];
+const EMPTY_SAVED_URLS: string[] = [];
 
 function isValidHttpUrl(value: string): boolean {
   if (!value) return false;
@@ -90,6 +77,7 @@ function previewToMarkdown(preview: LinkPreview) {
 
 export default function BusinessLinkSaver() {
   const reducedMotion = useReducedMotion();
+  const userId = useAuthStore((s) => s.user?.id);
   const generate = useGenerate("link-saver");
   const createNote = useCreateNote();
   const { data: projectsData } = useListProjects();
@@ -99,17 +87,27 @@ export default function BusinessLinkSaver() {
   const [url, setUrl] = React.useState("");
   const [current, setCurrent] = React.useState<LinkPreview | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [history, setHistory] = React.useState<HistoryEntry[]>(() =>
-    loadJson<HistoryEntry[]>(HISTORY_KEY, [])
+  const [history, setHistory] = useScopedLocalStorageState<HistoryEntry[]>(
+    userId,
+    HISTORY_KEY,
+    EMPTY_HISTORY
   );
-  const [savedUrls, setSavedUrls] = React.useState<string[]>(() =>
-    loadJson<string[]>(SAVED_KEY, [])
+  const [savedUrls, setSavedUrls] = useScopedLocalStorageState<string[]>(
+    userId,
+    SAVED_KEY,
+    EMPTY_SAVED_URLS
   );
   const [savingNoteProject, setSavingNoteProject] = React.useState<string>("");
   const [historyQuery, setHistoryQuery] = React.useState("");
 
-  React.useEffect(() => persistJson(HISTORY_KEY, history), [history]);
-  React.useEffect(() => persistJson(SAVED_KEY, savedUrls), [savedUrls]);
+  React.useEffect(() => {
+    removeStorageKeys([HISTORY_KEY, SAVED_KEY]);
+    setUrl("");
+    setCurrent(null);
+    setError(null);
+    setSavingNoteProject("");
+    setHistoryQuery("");
+  }, [userId]);
 
   React.useEffect(() => {
     inputRef.current?.focus();

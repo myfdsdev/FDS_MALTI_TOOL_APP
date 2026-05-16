@@ -94,6 +94,7 @@ async function findOwnedNoteOr404(userId: Types.ObjectId, noteId: string) {
 }
 
 async function adjustProjectCounts(
+  userId: Types.ObjectId,
   projectId: Types.ObjectId | string,
   changes: { taskDelta?: number; completedDelta?: number }
 ) {
@@ -107,7 +108,7 @@ async function adjustProjectCounts(
     update.$inc.completedCount = changes.completedDelta;
   }
   if (update.$inc) {
-    await Project.updateOne({ _id: projectId }, update);
+    await Project.updateOne({ _id: projectId, user: userId }, update);
   }
 }
 
@@ -346,7 +347,7 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
     position: (lastTask?.position ?? -1) + 1,
   });
 
-  await adjustProjectCounts(project._id, {
+  await adjustProjectCounts(authedReq.user._id, project._id, {
     taskDelta: 1,
     completedDelta: task.status === "done" ? 1 : 0,
   });
@@ -395,7 +396,7 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
         : 0;
 
   if (completedDelta !== 0) {
-    await adjustProjectCounts(task.project, { completedDelta });
+    await adjustProjectCounts(authedReq.user._id, task.project, { completedDelta });
   }
 
   return ok(res, task, "Task updated");
@@ -410,7 +411,7 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
     Task.deleteOne({ _id: task._id, user: authedReq.user._id }),
   ]);
 
-  await adjustProjectCounts(task.project, {
+  await adjustProjectCounts(authedReq.user._id, task.project, {
     taskDelta: -1,
     completedDelta: task.status === "done" ? -1 : 0,
   });
@@ -511,14 +512,18 @@ export const listNotes = asyncHandler(async (req: Request, res: Response) => {
   };
 
   const filter: Record<string, unknown> = { user: authedReq.user._id };
+  let ownedProject: ProjectDocument | null = null;
 
   if (projectId) {
-    ensureObjectId(projectId, "Project");
-    filter.project = projectId;
+    ownedProject = await findOwnedProjectOr404(authedReq.user._id, projectId);
+    filter.project = ownedProject._id;
   }
   if (taskId) {
-    ensureObjectId(taskId, "Task");
-    filter.task = taskId;
+    const task = await findOwnedTaskOr404(authedReq.user._id, taskId);
+    if (ownedProject && String(task.project) !== String(ownedProject._id)) {
+      throw new NotFoundError("Task not found");
+    }
+    filter.task = task._id;
   }
   if (pinned === "true") {
     filter.pinned = true;

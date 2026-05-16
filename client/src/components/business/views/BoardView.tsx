@@ -24,6 +24,7 @@ import { motion } from "motion/react";
 import * as businessApi from "@/lib/business.api";
 import { businessKeys } from "@/lib/business.queries";
 import { extractErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth.store";
 import type { ProjectDetail, Task, TaskStatus } from "@/types/business";
 import { TaskCard } from "../TaskCard";
 
@@ -78,12 +79,13 @@ function findStatusForId(columns: ColumnState, id: string): TaskStatus | null {
 
 function updateProjectCountsInCache(
   queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
   projectId: string,
   completedDelta: number
 ) {
   if (completedDelta === 0) return;
 
-  queryClient.setQueryData<ProjectDetail | undefined>(businessKeys.project(projectId), (current) =>
+  queryClient.setQueryData<ProjectDetail | undefined>(businessKeys.project(userId, projectId), (current) =>
     current
       ? {
           ...current,
@@ -96,7 +98,7 @@ function updateProjectCountsInCache(
       : current
   );
 
-  queryClient.setQueriesData({ queryKey: businessKeys.projects }, (current) => {
+  queryClient.setQueriesData({ queryKey: businessKeys.projects(userId) }, (current) => {
     if (!current || typeof current !== "object" || !("items" in current)) return current;
     const value = current as { items: ProjectDetail[] };
     return {
@@ -210,6 +212,7 @@ export function BoardView({
   onCreateTask: (status: TaskStatus) => void;
 }) {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
   const [columns, setColumns] = React.useState<ColumnState>(() => groupTasks(tasks));
 
   React.useEffect(() => {
@@ -272,12 +275,12 @@ export function BoardView({
           : 0;
 
     setColumns(nextColumns);
-    queryClient.setQueryData(businessKeys.taskList(projectId), (current: unknown) =>
+    queryClient.setQueryData(businessKeys.taskList(userId, projectId), (current: unknown) =>
       current && typeof current === "object" && "items" in (current as Record<string, unknown>)
         ? { ...(current as Record<string, unknown>), items: nextItems }
         : current
     );
-    updateProjectCountsInCache(queryClient, projectId, completedDelta);
+    updateProjectCountsInCache(queryClient, userId, projectId, completedDelta);
 
     try {
       const calls: Array<Promise<unknown>> = [
@@ -301,19 +304,19 @@ export function BoardView({
 
       await Promise.all(calls);
 
-      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.project(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.projects });
-      queryClient.invalidateQueries({ queryKey: businessKeys.today });
-      queryClient.invalidateQueries({ queryKey: businessKeys.stats });
+      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.project(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.projects(userId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.today(userId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.stats(userId) });
     } catch (error) {
       setColumns(previousColumns);
-      queryClient.setQueryData(businessKeys.taskList(projectId), (current: unknown) =>
+      queryClient.setQueryData(businessKeys.taskList(userId, projectId), (current: unknown) =>
         current && typeof current === "object" && "items" in (current as Record<string, unknown>)
           ? { ...(current as Record<string, unknown>), items: previousItems }
           : current
       );
-      updateProjectCountsInCache(queryClient, projectId, -completedDelta);
+      updateProjectCountsInCache(queryClient, userId, projectId, -completedDelta);
       toast.error(extractErrorMessage(error, "Couldn't move that task"));
     }
   }

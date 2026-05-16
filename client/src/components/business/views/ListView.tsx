@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import * as businessApi from "@/lib/business.api";
 import { businessKeys } from "@/lib/business.queries";
 import { extractErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth.store";
 import type { Task } from "@/types/business";
 import { PriorityBadge } from "../PriorityBadge";
 import { StatusPill } from "../StatusPill";
@@ -23,6 +24,7 @@ export function ListView({
   onTaskClick: (task: Task) => void;
 }) {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
   const [sortField, setSortField] = React.useState<SortField>("dueDate");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
@@ -86,10 +88,10 @@ export function ListView({
     try {
       await Promise.all(selectedIds.map((id) => businessApi.updateTask(id, { status: "done", progress: 100 })));
       setSelectedIds([]);
-      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.project(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.projects });
-      queryClient.invalidateQueries({ queryKey: businessKeys.today });
+      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.project(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.projects(userId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.today(userId) });
       toast.success("Tasks marked done");
     } catch (error) {
       toast.error(extractErrorMessage(error, "Couldn't update those tasks"));
@@ -103,10 +105,10 @@ export function ListView({
     try {
       await Promise.all(selectedIds.map((id) => businessApi.deleteTask(id)));
       setSelectedIds([]);
-      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.project(projectId) });
-      queryClient.invalidateQueries({ queryKey: businessKeys.projects });
-      queryClient.invalidateQueries({ queryKey: businessKeys.today });
+      queryClient.invalidateQueries({ queryKey: businessKeys.tasks(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.project(userId, projectId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.projects(userId) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.today(userId) });
       toast.success("Tasks deleted");
     } catch (error) {
       toast.error(extractErrorMessage(error, "Couldn't delete those tasks"));

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth.store";
+import { clearPrivateQueryData, scopeKey } from "@/lib/query-scope";
 import type {
   AiProvider,
   AdminSettings,
@@ -25,15 +26,18 @@ export const toolKeys = {
 };
 
 export const userKeys = {
-  usage: ["user", "usage"] as const,
-  history: (page: number, limit: number, toolId?: string) =>
-    ["user", "history", { page, limit, toolId }] as const,
+  all: (userId?: string | null) => ["user", scopeKey(userId)] as const,
+  usage: (userId?: string | null) => [...userKeys.all(userId), "usage"] as const,
+  history: (userId: string | null | undefined, page: number, limit: number, toolId?: string) =>
+    [...userKeys.all(userId), "history", { page, limit, toolId }] as const,
 };
 
 export const adminKeys = {
-  stats: ["admin", "stats"] as const,
-  users: (params: AdminUsersParams) => ["admin", "users", params] as const,
-  settings: ["admin", "settings"] as const,
+  all: (userId?: string | null) => ["admin", scopeKey(userId)] as const,
+  stats: (userId?: string | null) => [...adminKeys.all(userId), "stats"] as const,
+  users: (userId: string | null | undefined, params: AdminUsersParams) =>
+    [...adminKeys.all(userId), "users", params] as const,
+  settings: (userId?: string | null) => [...adminKeys.all(userId), "settings"] as const,
 };
 
 export interface AdminUsersParams {
@@ -77,6 +81,7 @@ export function useLogin() {
       return res.data.data;
     },
     onSuccess: (data) => {
+      clearPrivateQueryData(qc);
       setUser(data.user);
       qc.setQueryData(authKeys.me, data.user);
     },
@@ -93,6 +98,7 @@ export function useRegister() {
       return res.data.data;
     },
     onSuccess: (data) => {
+      clearPrivateQueryData(qc);
       setUser(data.user);
       qc.setQueryData(authKeys.me, data.user);
     },
@@ -109,6 +115,7 @@ export function useGoogleLogin() {
       return res.data.data;
     },
     onSuccess: (data) => {
+      clearPrivateQueryData(qc);
       setUser(data.user);
       qc.setQueryData(authKeys.me, data.user);
     },
@@ -143,13 +150,14 @@ export function useTools() {
 
 export function useUsage() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: userKeys.usage,
+    queryKey: userKeys.usage(userId),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<UsageStatus>>("/user/usage");
       return res.data.data;
     },
-    enabled: isAuthed,
+    enabled: isAuthed && Boolean(userId),
     staleTime: 30_000,
   });
 }
@@ -157,15 +165,16 @@ export function useUsage() {
 export function useHistory(opts: { page?: number; limit?: number; toolId?: string } = {}) {
   const { page = 1, limit = 20, toolId } = opts;
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: userKeys.history(page, limit, toolId),
+    queryKey: userKeys.history(userId, page, limit, toolId),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<HistoryResponse>>("/user/history", {
         params: { page, limit, toolId },
       });
       return res.data.data;
     },
-    enabled: isAuthed,
+    enabled: isAuthed && Boolean(userId),
   });
 }
 
@@ -189,8 +198,9 @@ export function useGenerate(toolId: string) {
       return res.data.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: userKeys.usage });
-      qc.invalidateQueries({ queryKey: ["user", "history"] });
+      const userId = useAuthStore.getState().user?.id;
+      qc.invalidateQueries({ queryKey: userKeys.usage(userId) });
+      qc.invalidateQueries({ queryKey: userKeys.all(userId) });
     },
   });
 }
@@ -202,7 +212,8 @@ export function useDeleteHistoryItem() {
       await api.delete(`/user/history/${id}`);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["user", "history"] });
+      const userId = useAuthStore.getState().user?.id;
+      qc.invalidateQueries({ queryKey: userKeys.all(userId) });
     },
   });
 }
@@ -217,8 +228,9 @@ export function useClearHistory() {
       return res.data.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["user", "history"] });
-      qc.invalidateQueries({ queryKey: userKeys.usage });
+      const userId = useAuthStore.getState().user?.id;
+      qc.invalidateQueries({ queryKey: userKeys.all(userId) });
+      qc.invalidateQueries({ queryKey: userKeys.usage(userId) });
     },
   });
 }
@@ -261,28 +273,30 @@ export function useVerifyEmail() {
 
 export function useAdminStats() {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: adminKeys.stats,
+    queryKey: adminKeys.stats(userId),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<AdminStats>>("/admin/stats");
       return res.data.data;
     },
-    enabled: isAdmin,
+    enabled: isAdmin && Boolean(userId),
     staleTime: 30_000,
   });
 }
 
 export function useAdminUsers(params: AdminUsersParams = {}) {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: adminKeys.users(params),
+    queryKey: adminKeys.users(userId, params),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<AdminUsersResponse>>("/admin/users", {
         params,
       });
       return res.data.data;
     },
-    enabled: isAdmin,
+    enabled: isAdmin && Boolean(userId),
   });
 }
 
@@ -302,7 +316,8 @@ export function useUpdateUser() {
       return res.data.data.user;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin"] });
+      const userId = useAuthStore.getState().user?.id;
+      qc.invalidateQueries({ queryKey: adminKeys.all(userId) });
     },
   });
 }
@@ -314,20 +329,22 @@ export function useDeleteUser() {
       await api.delete(`/admin/users/${id}`);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin"] });
+      const userId = useAuthStore.getState().user?.id;
+      qc.invalidateQueries({ queryKey: adminKeys.all(userId) });
     },
   });
 }
 
 export function useAdminSettings() {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: adminKeys.settings,
+    queryKey: adminKeys.settings(userId),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<AdminSettings>>("/admin/settings");
       return res.data.data;
     },
-    enabled: isAdmin,
+    enabled: isAdmin && Boolean(userId),
     staleTime: 30_000,
   });
 }
@@ -345,7 +362,8 @@ export function useUpdateSettings() {
       return res.data.data;
     },
     onSuccess: (data) => {
-      qc.setQueryData(adminKeys.settings, data);
+      const userId = useAuthStore.getState().user?.id;
+      qc.setQueryData(adminKeys.settings(userId), data);
     },
   });
 }

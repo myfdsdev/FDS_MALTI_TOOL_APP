@@ -11,6 +11,8 @@ import { CalendarView } from "@/components/business/views/CalendarView";
 import { ListView } from "@/components/business/views/ListView";
 import { NotesView } from "@/components/business/views/NotesView";
 import { useListTasks, useProject } from "@/lib/business.queries";
+import { useScopedLocalStorageState } from "@/lib/user-storage";
+import { useAuthStore } from "@/stores/auth.store";
 import type { BusinessView, Task, TaskStatus } from "@/types/business";
 
 const DEFAULT_VIEW: BusinessView = "board";
@@ -18,6 +20,7 @@ const DEFAULT_VIEW: BusinessView = "board";
 export default function Project() {
   const navigate = useNavigate();
   const { projectId = "" } = useParams();
+  const userId = useAuthStore((s) => s.user?.id);
   const [searchParams, setSearchParams] = useSearchParams();
   const taskIdFromSearch = searchParams.get("taskId");
   const { data: project, isLoading } = useProject(projectId);
@@ -28,19 +31,16 @@ export default function Project() {
   const [taskDialogOpen, setTaskDialogOpen] = React.useState(false);
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [initialStatus, setInitialStatus] = React.useState<TaskStatus | undefined>();
-  const [activeView, setActiveView] = React.useState<BusinessView>(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(`business_view_${projectId}`) : null;
-    return (saved as BusinessView) || DEFAULT_VIEW;
-  });
+  const [activeView, setActiveView] = useScopedLocalStorageState<BusinessView>(
+    userId,
+    `business.view.${projectId}`,
+    DEFAULT_VIEW
+  );
 
   const suggestedTags = React.useMemo(
     () => Array.from(new Set(tasks.flatMap((task) => task.tags))).sort(),
     [tasks]
   );
-
-  React.useEffect(() => {
-    localStorage.setItem(`business_view_${projectId}`, activeView);
-  }, [activeView, projectId]);
 
   React.useEffect(() => {
     if (!taskIdFromSearch) return;

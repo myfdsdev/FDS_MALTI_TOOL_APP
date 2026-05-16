@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -28,18 +29,31 @@ import { useMe } from "@/lib/queries";
 import { useAuthStore } from "@/stores/auth.store";
 import { setAuthFailureHandler } from "@/lib/api";
 import { useTheme } from "@/hooks/useTheme";
+import { clearPrivateQueryData } from "@/lib/query-scope";
 
 export default function App() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const status = useAuthStore((s) => s.status);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const reset = useAuthStore((s) => s.reset);
+  const previousUserId = useRef<string | null>(userId);
 
   useMe();
   useTheme(); // apply persisted theme on mount
 
   useEffect(() => {
-    setAuthFailureHandler(() => reset());
-  }, [reset]);
+    setAuthFailureHandler(() => {
+      reset();
+      clearPrivateQueryData(queryClient);
+    });
+  }, [queryClient, reset]);
+
+  useEffect(() => {
+    if (previousUserId.current === userId) return;
+    clearPrivateQueryData(queryClient, userId);
+    previousUserId.current = userId;
+  }, [queryClient, userId]);
 
   return (
     <AnimatePresence mode="wait">

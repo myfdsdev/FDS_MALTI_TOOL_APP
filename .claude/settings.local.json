@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node -e \"import\\('./dist/app.js'\\).then\\(m => { const app = m.createApp\\(\\); console.log\\('App created with', app._router?.stack?.length || 'unknown', 'middleware'\\); process.exit\\(0\\); }\\).catch\\(e => { console.error\\(e\\); process.exit\\(1\\); }\\);\")",
+      "Bash(node -e ' *)"
     ]
   }
 }
