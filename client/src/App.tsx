@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Business from "@/pages/Business";
+import BusinessManagement from "@/pages/BusinessManagement";
 import BusinessNotes from "@/pages/BusinessNotes";
 import BusinessLinkSaver from "@/pages/BusinessLinkSaver";
 import BusinessIdeas from "@/pages/BusinessIdeas";
@@ -78,7 +79,7 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/business" element={<Navigate to="/business/projects" replace />} />
+          <Route path="/business" element={<BusinessManagement />} />
           <Route path="/business/projects" element={<Business />} />
           <Route path="/business/notes" element={<BusinessNotes />} />
           <Route path="/business/link-saver" element={<BusinessLinkSaver />} />
