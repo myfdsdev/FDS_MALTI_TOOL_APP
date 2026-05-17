@@ -1,56 +1,74 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, History, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Briefcase,
+  FileText,
+  FileUser,
+  History,
+  Lightbulb,
+  LineChart,
+  Link2,
+  Sparkles,
+} from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
-import { useHistory, useTools, useUsage } from "@/lib/queries";
-import { useTodayTasks } from "@/lib/business.queries";
-import { getCategoryIcon, getToolIcon } from "@/lib/tool-icons";
-import { TodayWidget } from "@/components/business/TodayWidget";
+import { useHistory, useUsage } from "@/lib/queries";
+import { getToolIcon } from "@/lib/tool-icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Tool, ToolCategory } from "@/types/api";
 
-const POPULAR_TOOL_IDS = [
-  "hook-generator",
-  "caption-generator",
-  "email-writer",
-  "url-shortener",
-  "color-palette",
-  "business-name",
-  "reel-script",
-];
+interface Shortcut {
+  to: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
 
-const PINNED_CATEGORIES: ToolCategory[] = [
-  "marketing",
-  "business",
-  "design",
-  "video",
-  "local",
-  "quick",
+const SHORTCUTS: Shortcut[] = [
+  {
+    to: "/business-ideas",
+    title: "50+ AI tools",
+    description: "Browse the full catalog of business, marketing, design, and creator generators.",
+    icon: Lightbulb,
+  },
+  {
+    to: "/business/projects",
+    title: "Projects & tasks",
+    description: "Plan work, track due dates, and run a kanban board for every project.",
+    icon: Briefcase,
+  },
+  {
+    to: "/business/link-saver",
+    title: "Link saver bank",
+    description: "Save and preview useful links into a single searchable workspace.",
+    icon: Link2,
+  },
+  {
+    to: "/business/notes",
+    title: "Notes",
+    description: "Capture meeting notes, decisions, and project context in one place.",
+    icon: FileText,
+  },
+  {
+    to: "/business/resumes",
+    title: "Resumes",
+    description: "Build, polish, share, and export AI-assisted resumes.",
+    icon: FileUser,
+  },
+  {
+    to: "/business/reports",
+    title: "Growth reports",
+    description: "AI-powered monetization reports for any public website.",
+    icon: LineChart,
+  },
 ];
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
-  const { data: tools } = useTools();
   const { data: usage } = useUsage();
   const { data: history, isLoading: historyLoading } = useHistory({ page: 1, limit: 6 });
-  const { data: todayTasks = [] } = useTodayTasks();
-
-  const popular = useMemo(() => {
-    if (!tools) return [];
-    const byId = new Map(tools.tools.map((t) => [t.id, t]));
-    return POPULAR_TOOL_IDS.map((id) => byId.get(id)).filter((t): t is Tool => !!t);
-  }, [tools]);
-
-  const categoryCounts = useMemo(() => {
-    if (!tools) return new Map<ToolCategory, number>();
-    return tools.tools.reduce((acc, t) => {
-      acc.set(t.category, (acc.get(t.category) ?? 0) + 1);
-      return acc;
-    }, new Map<ToolCategory, number>());
-  }, [tools]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
@@ -61,7 +79,7 @@ export default function Dashboard() {
             Welcome back{user ? `, ${user.name.split(" ")[0]}` : ""}.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pick a tool or jump back into a recent generation.
+            Pick a workspace or jump back into a recent generation.
           </p>
         </div>
         {usage && (
@@ -74,9 +92,9 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Try a tool */}
+      {/* Quick access shortcuts to the main workspaces */}
       <section className="mt-10">
-        <SectionHeader title="Try a tool" hint="Popular picks" />
+        <SectionHeader title="Jump to a workspace" hint="Quick access" />
         <motion.div
           initial="hidden"
           animate="show"
@@ -86,93 +104,58 @@ export default function Dashboard() {
           }}
           className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {popular.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-28 animate-pulse rounded-xl bg-muted/50" />
-              ))
-            : popular.map((tool) => (
-                <motion.div
-                  key={tool.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 8 },
-                    show: { opacity: 1, y: 0 },
-                  }}
-                >
-                  <PopularToolCard tool={tool} />
-                </motion.div>
-              ))}
+          {SHORTCUTS.map((s) => (
+            <motion.div
+              key={s.to}
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0 },
+              }}
+            >
+              <ShortcutCard shortcut={s} />
+            </motion.div>
+          ))}
         </motion.div>
       </section>
 
+      {/* Recent generations */}
       <section className="mt-10">
-        <TodayWidget tasks={todayTasks} />
-      </section>
-
-      {/* Recent + pinned */}
-      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Recent generations */}
-        <section className="lg:col-span-2">
-          <SectionHeader
-            title="Recent generations"
-            action={
-              <Link
-                to="/history"
-                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                View all <ArrowRight className="size-3.5" />
-              </Link>
-            }
-          />
-          <Card className="mt-4">
-            <CardContent className="p-0">
-              {historyLoading ? (
-                <ul className="divide-y divide-border">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <li key={i} className="h-16 animate-pulse" />
-                  ))}
-                </ul>
-              ) : history && history.items.length > 0 ? (
-                <ul className="divide-y divide-border">
-                  {history.items.slice(0, 6).map((item) => (
-                    <RecentRow
-                      key={item._id}
-                      toolId={item.toolId}
-                      inputs={item.inputs}
-                      createdAt={item.createdAt}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <EmptyRecent />
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Pinned categories */}
-        <section>
-          <SectionHeader title="Categories" />
-          <div className="mt-4 grid grid-cols-1 gap-3">
-            {tools
-              ? PINNED_CATEGORIES.map((cat) => {
-                  const info = tools.categories[cat];
-                  if (!info) return null;
-                  const count = categoryCounts.get(cat) ?? 0;
-                  return (
-                    <CategoryTile
-                      key={cat}
-                      category={cat}
-                      label={info.label}
-                      count={count}
-                    />
-                  );
-                })
-              : Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-16 animate-pulse rounded-xl bg-muted/50" />
+        <SectionHeader
+          title="Recent generations"
+          action={
+            <Link
+              to="/history"
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              View all <ArrowRight className="size-3.5" />
+            </Link>
+          }
+        />
+        <Card className="mt-4">
+          <CardContent className="p-0">
+            {historyLoading ? (
+              <ul className="divide-y divide-border">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <li key={i} className="h-16 animate-pulse" />
                 ))}
-          </div>
-        </section>
-      </div>
+              </ul>
+            ) : history && history.items.length > 0 ? (
+              <ul className="divide-y divide-border">
+                {history.items.slice(0, 6).map((item) => (
+                  <RecentRow
+                    key={item._id}
+                    toolId={item.toolId}
+                    inputs={item.inputs}
+                    createdAt={item.createdAt}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <EmptyRecent />
+            )}
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
@@ -197,24 +180,24 @@ function SectionHeader({
   );
 }
 
-function PopularToolCard({ tool }: { tool: Tool }) {
-  const Icon = getToolIcon(tool.id);
+function ShortcutCard({ shortcut }: { shortcut: Shortcut }) {
+  const Icon = shortcut.icon;
   return (
     <Link
-      to={`/tools/${tool.id}`}
+      to={shortcut.to}
       className={cn(
-        "group block rounded-xl border border-border bg-card p-4 shadow-sm",
-        "transition-transform hover:-translate-y-0.5 hover:shadow-md",
+        "group block h-full rounded-xl border border-border bg-card p-4 shadow-sm",
+        "transition-transform hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex h-full items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <Icon className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold">{tool.name}</h3>
+          <h3 className="truncate text-sm font-semibold">{shortcut.title}</h3>
           <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-            {tool.description}
+            {shortcut.description}
           </p>
         </div>
         <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
@@ -274,43 +257,16 @@ function EmptyRecent() {
       </div>
       <p className="text-sm font-medium">No generations yet</p>
       <p className="max-w-sm text-xs text-muted-foreground">
-        Pick a tool above and your first result will show up here.
+        Pick a workspace above and your first result will show up here.
       </p>
       <Link
-        to="/dashboard"
+        to="/business-ideas"
         className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
       >
         <Sparkles className="size-3.5" />
         Browse tools
       </Link>
     </div>
-  );
-}
-
-function CategoryTile({
-  category,
-  label,
-  count,
-}: {
-  category: ToolCategory;
-  label: string;
-  count: number;
-}) {
-  const Icon = getCategoryIcon(category);
-  return (
-    <Link
-      to={`/category/${category}`}
-      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent"
-    >
-      <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-        <Icon className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{count} tools</p>
-      </div>
-      <ArrowRight className="size-4 text-muted-foreground" />
-    </Link>
   );
 }
 
