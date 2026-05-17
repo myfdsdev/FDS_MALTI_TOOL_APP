@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireWorkspaceEnabled } from "../middleware/featureFlag.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
   createReportSchema,
@@ -18,6 +19,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireWorkspaceEnabled("reports"));
 
 router.get("/", validate(listReportsQuerySchema, "query"), listReports);
 router.post("/", validate(createReportSchema), createReport);

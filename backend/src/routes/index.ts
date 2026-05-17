@@ -9,6 +9,8 @@ import resumeRoutes from "./resume.routes.js";
 import publicResumeRoutes from "./publicResume.routes.js";
 import reportRoutes from "./report.routes.js";
 import publicReportRoutes from "./publicReport.routes.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
+import { getPublicFeatureFlags } from "../controllers/featureFlags.controller.js";
 
 const router = Router();
 
@@ -36,5 +38,8 @@ router.use("/business/resumes", resumeRoutes);
 router.use("/business/reports", reportRoutes);
 router.use("/public", publicResumeRoutes);
 router.use("/public/reports", publicReportRoutes);
+
+// Authenticated users can read the current feature-flag state to drive their UI.
+router.get("/feature-flags", requireAuth, getPublicFeatureFlags);
 
 export default router;

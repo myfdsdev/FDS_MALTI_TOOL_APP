@@ -1,5 +1,9 @@
 import { Router } from "express";
 import * as adminController from "../controllers/admin.controller.js";
+import {
+  adminGetFeatureFlags,
+  adminUpdateFeatureFlags,
+} from "../controllers/featureFlags.controller.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -8,6 +12,7 @@ import {
   updateUserSchema,
   updateSettingsSchema,
 } from "../validators/admin.validator.js";
+import { updateFeatureFlagsSchema } from "../validators/featureFlags.validator.js";
 
 const router = Router();
 
@@ -32,6 +37,14 @@ router.put(
   "/settings",
   validate(updateSettingsSchema),
   asyncHandler(adminController.updateSettings)
+);
+
+// Feature flags — toggle tools and workspaces site-wide.
+router.get("/feature-flags", adminGetFeatureFlags);
+router.patch(
+  "/feature-flags",
+  validate(updateFeatureFlagsSchema),
+  adminUpdateFeatureFlags
 );
 
 export default router;

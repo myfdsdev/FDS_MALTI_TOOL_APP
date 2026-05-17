@@ -54,6 +54,20 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 const DEFAULT_STATUS: TaskStatus = "todo";
 const DEFAULT_PRIORITY: TaskPriority = "medium";
 
+const STATUS_LABEL: Record<TaskStatus, string> = {
+  todo: "Todo",
+  in_progress: "In Progress",
+  review: "Review",
+  done: "Done",
+};
+
+const STATUS_TONE: Record<TaskStatus, string> = {
+  todo: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
+  in_progress: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  review: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  done: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+};
+
 function checklistId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -287,9 +301,28 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{task ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {task ? (
+              "Edit task"
+            ) : (
+              <>
+                <span>New task</span>
+                {initialStatus && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_TONE[initialStatus]}`}
+                  >
+                    in {STATUS_LABEL[initialStatus]}
+                  </span>
+                )}
+              </>
+            )}
+          </DialogTitle>
           <DialogDescription>
-            Capture details, deadlines, tags, and checklist progress in one place.
+            {task
+              ? "Capture details, deadlines, tags, and checklist progress in one place."
+              : initialStatus
+                ? `This task will be added to the ${STATUS_LABEL[initialStatus]} column. Change the Status field below to move it.`
+                : "Capture details, deadlines, tags, and checklist progress in one place."}
           </DialogDescription>
         </DialogHeader>
 

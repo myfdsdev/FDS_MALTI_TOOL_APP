@@ -29,6 +29,7 @@ import VerifyEmail from "@/pages/VerifyEmail";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 import { AppShell } from "@/components/layout/AppShell";
+import { WorkspaceGate } from "@/components/common/WorkspaceGate";
 
 import { useMe } from "@/lib/queries";
 import { useAuthStore } from "@/stores/auth.store";
@@ -88,18 +89,18 @@ export default function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/business" element={<BusinessManagement />} />
-          <Route path="/business/projects" element={<Business />} />
-          <Route path="/business/calendar" element={<BusinessCalendarPage />} />
-          <Route path="/business/reports" element={<ReportsListPage />} />
-          <Route path="/business/reports/new" element={<NewReportPage />} />
-          <Route path="/business/reports/:id" element={<ReportViewerPage />} />
-          <Route path="/business/notes" element={<BusinessNotes />} />
-          <Route path="/business/link-saver" element={<BusinessLinkSaver />} />
-          <Route path="/business/resumes" element={<Resumes />} />
+          <Route path="/business/projects" element={<WorkspaceGate workspace="projects"><Business /></WorkspaceGate>} />
+          <Route path="/business/calendar" element={<WorkspaceGate workspace="calendar"><BusinessCalendarPage /></WorkspaceGate>} />
+          <Route path="/business/reports" element={<WorkspaceGate workspace="reports"><ReportsListPage /></WorkspaceGate>} />
+          <Route path="/business/reports/new" element={<WorkspaceGate workspace="reports"><NewReportPage /></WorkspaceGate>} />
+          <Route path="/business/reports/:id" element={<WorkspaceGate workspace="reports"><ReportViewerPage /></WorkspaceGate>} />
+          <Route path="/business/notes" element={<WorkspaceGate workspace="notes"><BusinessNotes /></WorkspaceGate>} />
+          <Route path="/business/link-saver" element={<WorkspaceGate workspace="link-saver"><BusinessLinkSaver /></WorkspaceGate>} />
+          <Route path="/business/resumes" element={<WorkspaceGate workspace="resumes"><Resumes /></WorkspaceGate>} />
           <Route path="/business/resumes/templates" element={<Navigate to="/business/resumes" replace />} />
-          <Route path="/business/resumes/:id" element={<ResumeBuilderPage />} />
-          <Route path="/business/projects/:projectId" element={<Project />} />
-          <Route path="/business-ideas" element={<BusinessIdeas />} />
+          <Route path="/business/resumes/:id" element={<WorkspaceGate workspace="resumes"><ResumeBuilderPage /></WorkspaceGate>} />
+          <Route path="/business/projects/:projectId" element={<WorkspaceGate workspace="projects"><Project /></WorkspaceGate>} />
+          <Route path="/business-ideas" element={<WorkspaceGate workspace="ideas"><BusinessIdeas /></WorkspaceGate>} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/tools/:toolId" element={<Tool />} />
           <Route path="/history" element={<History />} />

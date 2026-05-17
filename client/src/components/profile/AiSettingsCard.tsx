@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Globe, KeyRound, Loader2, Save, Server, ShieldCheck } from "lucide-react";
 
@@ -11,27 +11,49 @@ import { extractErrorMessage } from "@/lib/api";
 import { useUpdateUserAISettings, useUserAISettings } from "@/lib/queries";
 import type { AiProvider } from "@/types/api";
 
-const PROVIDER_OPTIONS: Array<{ value: AiProvider; label: string }> = [
-  { value: "anthropic", label: "Anthropic" },
-  { value: "openai", label: "OpenAI" },
-  { value: "gemini", label: "Google Gemini" },
-  { value: "openai-compatible", label: "OpenAI-compatible" },
+/**
+ * ONE unified AI config. Defaults to `openai-compatible`, which works with
+ * OpenRouter, OpenAI itself, Groq, Together, Ollama, or any other OpenAI-style
+ * endpoint. Anthropic and Gemini stay available for their native APIs.
+ *
+ * Only ONE key is stored. No multi-provider chaining. Whatever you put here
+ * gets used for every AI feature on the site (tools, resume AI, growth reports).
+ */
+
+const PROVIDER_OPTIONS: Array<{ value: AiProvider; label: string; hint: string }> = [
+  {
+    value: "openai-compatible",
+    label: "OpenAI-compatible (recommended)",
+    hint: "Works with OpenRouter, OpenAI, Groq, Together, Ollama, etc.",
+  },
+  { value: "anthropic", label: "Anthropic (native API)", hint: "claude-sonnet-* models direct" },
+  { value: "openai", label: "OpenAI (native API)", hint: "OpenAI's own endpoint" },
+  { value: "gemini", label: "Google Gemini (native API)", hint: "Gemini's own endpoint" },
 ];
 
-const MODEL_SUGGESTIONS: Record<AiProvider, string[]> = {
-  anthropic: ["claude-sonnet-4-5", "claude-3-7-sonnet-latest", "claude-3-5-haiku-latest"],
-  openai: ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
-  gemini: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
-  "openai-compatible": ["openai/gpt-4.1-mini", "meta-llama/llama-3.3-70b-instruct", "deepseek-chat"],
+const PLACEHOLDER_BASE_URL: Record<AiProvider, string> = {
+  "openai-compatible": "https://openrouter.ai/api/v1",
+  openai: "https://api.openai.com/v1 (optional)",
+  anthropic: "(not used)",
+  gemini: "(not used)",
 };
+
+const PLACEHOLDER_MODEL: Record<AiProvider, string> = {
+  "openai-compatible": "openai/gpt-4.1-mini",
+  openai: "gpt-4.1-mini",
+  anthropic: "claude-sonnet-4-5",
+  gemini: "gemini-2.5-flash",
+};
+
+const DEFAULT_PROVIDER: AiProvider = "openai-compatible";
 
 export function AiSettingsCard() {
   const { data: settings, isLoading } = useUserAISettings();
   const updateSettings = useUpdateUserAISettings();
 
   const [apiKey, setApiKey] = useState("");
-  const [provider, setProvider] = useState<AiProvider>("anthropic");
-  const [model, setModel] = useState("claude-sonnet-4-5");
+  const [provider, setProvider] = useState<AiProvider>(DEFAULT_PROVIDER);
+  const [model, setModel] = useState(PLACEHOLDER_MODEL[DEFAULT_PROVIDER]);
   const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
@@ -41,12 +63,6 @@ export function AiSettingsCard() {
     setBaseUrl(settings.aiBaseUrl || "");
   }, [settings]);
 
-  const suggestions = useMemo(() => MODEL_SUGGESTIONS[provider], [provider]);
-  const envLabel = settings?.envProvider
-    ? PROVIDER_OPTIONS.find((option) => option.value === settings.envProvider)?.label ||
-      settings.envProvider
-    : null;
-
   const onSave = async () => {
     const payload: {
       aiProvider: AiProvider;
@@ -55,7 +71,7 @@ export function AiSettingsCard() {
       aiApiKey?: string;
     } = {
       aiProvider: provider,
-      aiModel: model.trim(),
+      aiModel: model.trim() || PLACEHOLDER_MODEL[provider],
       aiBaseUrl: baseUrl.trim(),
     };
 
@@ -71,7 +87,7 @@ export function AiSettingsCard() {
   };
 
   const onClearKey = async () => {
-    if (!confirm("Remove your stored API key? Tools will fall back to environment config or mock output.")) {
+    if (!confirm("Remove your stored API key? AI features will fall back to the site-wide env config or mock output.")) {
       return;
     }
 
@@ -91,10 +107,12 @@ export function AiSettingsCard() {
           <KeyRound className="size-4" />
         </div>
         <div className="space-y-1.5">
-          <CardTitle>AI provider</CardTitle>
+          <CardTitle>AI service</CardTitle>
           <CardDescription>
-            Configure your provider, model, API key, and optional base URL for tool generation.
-            These settings belong only to your account.
+            <strong>One AI config</strong> for the whole app. Paste an API key here and every AI
+            feature — tools, resumes, growth reports — uses it. Defaults to{" "}
+            <span className="font-mono text-foreground">OpenAI-compatible</span> so the same key
+            works with OpenRouter, OpenAI, Groq, Together, Ollama, etc.
           </CardDescription>
         </div>
       </CardHeader>
@@ -111,11 +129,11 @@ export function AiSettingsCard() {
           ) : settings?.usingEnvFallback ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground">
               <Server className="size-3.5" />
-              Using env fallback{envLabel ? `: ${envLabel}` : ""}
+              Using site-wide env fallback
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-600 dark:text-amber-400">
-              No key - tools return mock output
+              No key — AI features return mock output
             </span>
           )}
 
@@ -127,13 +145,36 @@ export function AiSettingsCard() {
           )}
         </div>
 
+        {/* API key first — it's the primary thing */}
+        <div className="space-y-2">
+          <Label htmlFor="profile-ai-api-key">API key</Label>
+          <Input
+            id="profile-ai-api-key"
+            type="password"
+            autoComplete="off"
+            placeholder={settings?.hasApiKey ? "Enter a new key to replace" : "Paste any API key"}
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            One key for everything. Leave blank to keep the currently stored key.
+          </p>
+        </div>
+
+        {/* Provider + model side-by-side */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="profile-ai-provider">Provider</Label>
+            <Label htmlFor="profile-ai-provider">Endpoint type</Label>
             <Select
               id="profile-ai-provider"
               value={provider}
-              onChange={(event) => setProvider(event.target.value as AiProvider)}
+              onChange={(event) => {
+                const next = event.target.value as AiProvider;
+                setProvider(next);
+                if (!model.trim() || model === PLACEHOLDER_MODEL[provider]) {
+                  setModel(PLACEHOLDER_MODEL[next]);
+                }
+              }}
             >
               {PROVIDER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -141,80 +182,52 @@ export function AiSettingsCard() {
                 </option>
               ))}
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {PROVIDER_OPTIONS.find((opt) => opt.value === provider)?.hint}
+            </p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="profile-ai-model">Model</Label>
             <Input
               id="profile-ai-model"
-              list="profile-ai-model-suggestions"
               value={model}
               onChange={(event) => setModel(event.target.value)}
-              placeholder="Enter a model id"
+              placeholder={PLACEHOLDER_MODEL[provider]}
             />
-            <datalist id="profile-ai-model-suggestions">
-              {suggestions.map((suggestion) => (
-                <option key={suggestion} value={suggestion} />
-              ))}
-            </datalist>
             <p className="text-xs text-muted-foreground">
-              Free-form model id. Suggestions update with the provider.
+              Model id, free-form. The endpoint decides what's accepted.
             </p>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="profile-ai-api-key">API key</Label>
-            <Input
-              id="profile-ai-api-key"
-              type="password"
-              autoComplete="off"
-              placeholder={settings?.hasApiKey ? "Enter a new key to replace" : "Paste an API key"}
-              value={apiKey}
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to keep the current stored key.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="profile-ai-base-url">Base URL</Label>
-            <Input
-              id="profile-ai-base-url"
-              type="url"
-              value={baseUrl}
-              onChange={(event) => setBaseUrl(event.target.value)}
-              placeholder="https://openrouter.ai/api/v1"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional. Useful for OpenAI-compatible providers such as OpenRouter, Groq,
-              Together, or self-hosted gateways.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="profile-ai-base-url">Base URL (only for OpenAI-compatible)</Label>
+          <Input
+            id="profile-ai-base-url"
+            type="url"
+            value={baseUrl}
+            onChange={(event) => setBaseUrl(event.target.value)}
+            placeholder={PLACEHOLDER_BASE_URL[provider]}
+            disabled={provider === "anthropic" || provider === "gemini"}
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional. Set this for OpenRouter, Groq, Together, Ollama, or any custom OpenAI-style
+            gateway. Ignored for the native Anthropic and Gemini endpoints.
+          </p>
         </div>
 
         {settings?.usingEnvFallback && (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
             <p>
-              Env fallback provider: <span className="font-medium text-foreground">{settings.envProvider}</span>
+              The site admin set a fallback in <span className="font-mono text-foreground">AI_API_KEY</span>.
+              Your saved settings here will override it.
             </p>
-            {settings.envModel && (
-              <p className="mt-1">
-                Env fallback model: <span className="font-medium text-foreground">{settings.envModel}</span>
-              </p>
-            )}
-            {settings.envBaseUrl && (
-              <p className="mt-1 break-all">
-                Env fallback base URL: <span className="font-medium text-foreground">{settings.envBaseUrl}</span>
-              </p>
-            )}
           </div>
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={onSave} disabled={updateSettings.isPending || !model.trim()}>
+          <Button onClick={onSave} disabled={updateSettings.isPending}>
             {updateSettings.isPending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (

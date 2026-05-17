@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
 import type { AdminUser, Plan, UserRole } from "@/types/api";
 
 const PAGE_SIZE = 20;
@@ -291,6 +292,10 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <FeatureFlagsPanel />
+      </div>
     </div>
   );
 }

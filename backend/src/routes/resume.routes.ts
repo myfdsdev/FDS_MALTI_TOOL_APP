@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireWorkspaceEnabled } from "../middleware/featureFlag.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
   createResumeSchema,
@@ -30,6 +31,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireWorkspaceEnabled("resumes"));
 
 router.get("/", listResumes);
 router.post("/", validate(createResumeSchema), createResume);

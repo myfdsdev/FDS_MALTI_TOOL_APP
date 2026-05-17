@@ -19,44 +19,20 @@ function previewKey(apiKey?: string): string | null {
   return apiKey ? `...${apiKey.slice(-4)}` : null;
 }
 
+/**
+ * Single unified env-based AI config. One provider, one key, one model, one
+ * base URL. Use `AI_PROVIDER=openai-compatible` and `AI_BASE_URL=<endpoint>`
+ * for OpenRouter, Ollama, or any OpenAI-compatible API.
+ */
 export function getAIConfigFromEnv(): ResolvedAIConfig | null {
-  if (env.AI_API_KEY) {
-    const provider = env.AI_PROVIDER || "openai";
-    return {
-      provider,
-      apiKey: env.AI_API_KEY,
-      model: env.AI_MODEL || defaultModelFor(provider),
-      baseUrl: env.AI_BASE_URL || undefined,
-    };
-  }
-
-  if (env.OPENAI_API_KEY) {
-    return {
-      provider: "openai",
-      apiKey: env.OPENAI_API_KEY,
-      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
-      baseUrl: env.OPENAI_BASE_URL || undefined,
-    };
-  }
-
-  if (env.ANTHROPIC_API_KEY) {
-    return {
-      provider: "anthropic",
-      apiKey: env.ANTHROPIC_API_KEY,
-      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
-    };
-  }
-
-  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
-  if (geminiKey) {
-    return {
-      provider: "gemini",
-      apiKey: geminiKey,
-      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
-    };
-  }
-
-  return null;
+  if (!env.AI_API_KEY) return null;
+  const provider = env.AI_PROVIDER || "openai-compatible";
+  return {
+    provider,
+    apiKey: env.AI_API_KEY,
+    model: env.AI_MODEL || defaultModelFor(provider),
+    baseUrl: env.AI_BASE_URL || undefined,
+  };
 }
 
 export function resolveAIConfigForUser(user?: UserDocument | null): ResolvedAIConfig | null {
@@ -64,7 +40,7 @@ export function resolveAIConfigForUser(user?: UserDocument | null): ResolvedAICo
   const apiKey = settings?.aiApiKey;
 
   if (apiKey) {
-    const provider = settings.aiProvider || "anthropic";
+    const provider = settings.aiProvider || "openai-compatible";
     return {
       provider,
       apiKey,
@@ -77,7 +53,7 @@ export function resolveAIConfigForUser(user?: UserDocument | null): ResolvedAICo
 }
 
 export function toUserAISettingsResponse(user: UserDocument): AISettingsResponse {
-  const provider = user.aiSettings?.aiProvider || "anthropic";
+  const provider = user.aiSettings?.aiProvider || "openai-compatible";
   const apiKey = user.aiSettings?.aiApiKey;
   const envFallback = getAIConfigFromEnv();
 

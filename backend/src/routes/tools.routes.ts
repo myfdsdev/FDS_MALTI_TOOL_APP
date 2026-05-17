@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as toolsController from "../controllers/tools.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireToolEnabled } from "../middleware/featureFlag.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { apiLimiter } from "../middleware/rateLimit.middleware.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -17,6 +18,7 @@ router.get("/:toolId", toolsController.getTool);
 router.post(
   "/:toolId/generate",
   requireAuth,
+  requireToolEnabled,
   apiLimiter,
   validate(generateInputSchema),
   asyncHandler(toolsController.generateForTool)

@@ -19,47 +19,19 @@ import type {
 } from "../validators/admin.validator.js";
 
 function getEnvFallbackConfig() {
-  if (env.AI_API_KEY) {
-    const provider = env.AI_PROVIDER || "openai";
-    return {
-      provider,
-      model: env.AI_MODEL || defaultModelFor(provider),
-      baseUrl: env.AI_BASE_URL || null,
-    };
-  }
-
-  if (env.OPENAI_API_KEY) {
-    return {
-      provider: "openai" as const,
-      model: env.OPENAI_MODEL || env.AI_MODEL || defaultModelFor("openai"),
-      baseUrl: env.OPENAI_BASE_URL || null,
-    };
-  }
-
-  if (env.ANTHROPIC_API_KEY) {
-    return {
-      provider: "anthropic" as const,
-      model: env.ANTHROPIC_MODEL || env.AI_MODEL || defaultModelFor("anthropic"),
-      baseUrl: null,
-    };
-  }
-
-  const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
-  if (geminiKey) {
-    return {
-      provider: "gemini" as const,
-      model: env.GEMINI_MODEL || env.AI_MODEL || defaultModelFor("gemini"),
-      baseUrl: null,
-    };
-  }
-
-  return null;
+  if (!env.AI_API_KEY) return null;
+  const provider = env.AI_PROVIDER || "openai-compatible";
+  return {
+    provider,
+    model: env.AI_MODEL || defaultModelFor(provider),
+    baseUrl: env.AI_BASE_URL || null,
+  };
 }
 
 function toSettingsResponse(doc: SettingsDocument) {
   const key = doc.aiApiKey || doc.anthropicApiKey;
   const envFallback = getEnvFallbackConfig();
-  const provider = doc.aiProvider || "anthropic";
+  const provider = doc.aiProvider || "openai-compatible";
 
   return {
     aiProvider: provider,

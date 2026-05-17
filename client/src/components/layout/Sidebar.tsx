@@ -21,6 +21,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useTools } from "@/lib/queries";
 import { useAuthStore } from "@/stores/auth.store";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import type { WorkspaceKey } from "@/types/featureFlags";
 import { getCategoryIcon, getToolIcon } from "@/lib/tool-icons";
 import type { Tool, ToolCategory } from "@/types/api";
 
@@ -211,13 +213,20 @@ function AdminNavItem({
   return <SidebarItem to="/admin" icon={Shield} label="Admin" onNavigate={onNavigate} collapsed={collapsed} />;
 }
 
-const BUSINESS_SUB_ITEMS = [
-  { to: "/business/projects", label: "Projects", icon: Briefcase },
-  { to: "/business/reports", label: "Growth Reports", icon: LineChart },
-  { to: "/business/notes", label: "Notes", icon: FileText },
-  { to: "/business/link-saver", label: "Link Saver", icon: Link2 },
-  { to: "/business/resumes", label: "Resumes", icon: FileUser },
-] as const;
+interface BusinessSubItem {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  workspace: WorkspaceKey;
+}
+
+const BUSINESS_SUB_ITEMS: BusinessSubItem[] = [
+  { to: "/business/projects", label: "Projects", icon: Briefcase, workspace: "projects" },
+  { to: "/business/reports", label: "Growth Reports", icon: LineChart, workspace: "reports" },
+  { to: "/business/notes", label: "Notes", icon: FileText, workspace: "notes" },
+  { to: "/business/link-saver", label: "Link Saver", icon: Link2, workspace: "link-saver" },
+  { to: "/business/resumes", label: "Resumes", icon: FileUser, workspace: "resumes" },
+];
 
 function BusinessManagementNav({
   onNavigate,
@@ -229,6 +238,16 @@ function BusinessManagementNav({
   const location = useLocation();
   const inSection = location.pathname.startsWith("/business");
   const [open, setOpen] = useState(inSection);
+  const { isWorkspaceDisabled, isAnyWorkspaceEnabled } = useFeatureFlags();
+
+  const visibleSubItems = BUSINESS_SUB_ITEMS.filter(
+    (item) => !isWorkspaceDisabled(item.workspace)
+  );
+
+  // If every Business sub-section is hidden, drop the whole group from the nav.
+  if (!isAnyWorkspaceEnabled(BUSINESS_SUB_ITEMS.map((i) => i.workspace))) {
+    return null;
+  }
 
   // Collapsed: render as a single icon link to the hub.
   if (collapsed) {
@@ -291,7 +310,7 @@ function BusinessManagementNav({
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            {BUSINESS_SUB_ITEMS.map(({ to, label, icon: Icon }) => (
+            {visibleSubItems.map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <NavLink
                   to={to}
@@ -331,6 +350,7 @@ function BusinessIdeasNav({
   const location = useLocation();
   const inSection = /^\/(business-ideas|tools|category)/.test(location.pathname);
   const [open, setOpen] = useState(inSection);
+  const { isWorkspaceDisabled, isToolDisabled } = useFeatureFlags();
 
   const { data, isLoading } = useTools();
 
@@ -339,9 +359,12 @@ function BusinessIdeasNav({
     return CATEGORY_ORDER.filter((c) => data.categories[c]).map((c) => ({
       category: c,
       label: data.categories[c].label,
-      tools: data.tools.filter((t) => t.category === c),
+      tools: data.tools.filter((t) => t.category === c && !isToolDisabled(t.id)),
     }));
-  }, [data]);
+  }, [data, isToolDisabled]);
+
+  // Admin disabled the entire Business Ideas workspace — hide the nav entry.
+  if (isWorkspaceDisabled("ideas")) return null;
 
   if (collapsed) {
     return (
