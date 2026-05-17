@@ -301,11 +301,17 @@ export const deleteBudget = asyncHandler(async (req: Request, res: Response) => 
 
 /* ============================== SAVINGS GOALS ============================== */
 
-function serializeGoal(goal: { targetAmount: number; currentAmount: number } & Record<string, unknown>) {
+function serializeGoal(goal: unknown) {
+  const data =
+    goal && typeof goal === "object" && "toObject" in goal && typeof goal.toObject === "function"
+      ? goal.toObject()
+      : (goal as Record<string, unknown>);
+  const targetAmount = Number(data.targetAmount ?? 0);
+  const currentAmount = Number(data.currentAmount ?? 0);
   return {
-    ...goal,
-    progressPercent: goal.targetAmount
-      ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
+    ...data,
+    progressPercent: targetAmount
+      ? Math.min(100, Math.round((currentAmount / targetAmount) * 100))
       : 0,
   };
 }
@@ -335,7 +341,7 @@ export const createSavingsGoal = asyncHandler(async (req: Request, res: Response
     status: input.status,
   });
 
-  return created(res, serializeGoal(goal.toObject()), "Savings goal created");
+  return created(res, serializeGoal(goal), "Savings goal created");
 });
 
 export const updateSavingsGoal = asyncHandler(async (req: Request, res: Response) => {
@@ -358,7 +364,7 @@ export const updateSavingsGoal = asyncHandler(async (req: Request, res: Response
   }
 
   await goal.save();
-  return ok(res, serializeGoal(goal.toObject()), "Savings goal updated");
+  return ok(res, serializeGoal(goal), "Savings goal updated");
 });
 
 export const deleteSavingsGoal = asyncHandler(async (req: Request, res: Response) => {
