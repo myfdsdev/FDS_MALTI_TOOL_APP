@@ -25,8 +25,8 @@ export const updateMyAISettings = async (req: Request, res: Response) => {
   const input = req.body as UpdateAISettingsInput;
 
   req.user.aiSettings ??= {
-    aiProvider: "anthropic",
-    aiModel: defaultModelFor("anthropic"),
+    aiProvider: "openai-compatible",
+    aiModel: defaultModelFor("openai-compatible"),
   };
 
   if (input.aiProvider !== undefined) {

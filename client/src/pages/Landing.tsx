@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Hero } from "@/components/landing/Hero";
-import { CategoryGrid } from "@/components/landing/CategoryGrid";
 import { Footer } from "@/components/landing/Footer";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -33,7 +32,6 @@ export default function Landing() {
       <div className="overflow-hidden">
         <Hero />
       </div>
-      <CategoryGrid />
       <Footer />
     </main>
   );

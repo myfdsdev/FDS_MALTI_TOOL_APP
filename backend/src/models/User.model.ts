@@ -74,11 +74,11 @@ const userSchema = new Schema<UserDocument>(
       aiProvider: {
         type: String,
         enum: AI_PROVIDERS,
-        default: "anthropic",
+        default: "openai-compatible",
       },
       aiApiKey: { type: String, select: false },
       aiBaseUrl: { type: String },
-      aiModel: { type: String, default: defaultModelFor("anthropic") },
+      aiModel: { type: String, default: defaultModelFor("openai-compatible") },
     },
     lastLoginAt: Date,
   },

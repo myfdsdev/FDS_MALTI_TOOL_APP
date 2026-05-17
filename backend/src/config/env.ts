@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { z } from "zod";
-import { AI_PROVIDERS } from "./ai.config.js";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -19,12 +18,8 @@ const envSchema = z.object({
   // Comma-separated list of emails auto-promoted to admin on register/login.
   ADMIN_EMAILS: z.string().default(""),
 
-  // Single unified AI provider config. ONE key, ONE provider, ONE model.
-  // Use AI_PROVIDER=openai-compatible + AI_BASE_URL for OpenRouter, Ollama, etc.
-  AI_PROVIDER: z.enum(AI_PROVIDERS).optional(),
+  // Single AI key used by every AI feature. Provider/model/base URL are app defaults.
   AI_API_KEY: z.string().optional(),
-  AI_MODEL: z.string().optional(),
-  AI_BASE_URL: z.string().url().optional(),
 
   RATE_LIMIT_AUTH_MAX: z.coerce.number().default(10),
   RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),

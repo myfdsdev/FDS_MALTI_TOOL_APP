@@ -20,18 +20,16 @@ function previewKey(apiKey?: string): string | null {
 }
 
 /**
- * Single unified env-based AI config. One provider, one key, one model, one
- * base URL. Use `AI_PROVIDER=openai-compatible` and `AI_BASE_URL=<endpoint>`
- * for OpenRouter, Ollama, or any OpenAI-compatible API.
+ * Env fallback intentionally accepts only one variable: AI_API_KEY.
+ * Provider/model/base URL stay as app defaults.
  */
 export function getAIConfigFromEnv(): ResolvedAIConfig | null {
   if (!env.AI_API_KEY) return null;
-  const provider = env.AI_PROVIDER || "openai-compatible";
+  const provider: AIProvider = "openai-compatible";
   return {
     provider,
     apiKey: env.AI_API_KEY,
-    model: env.AI_MODEL || defaultModelFor(provider),
-    baseUrl: env.AI_BASE_URL || undefined,
+    model: defaultModelFor(provider),
   };
 }
 

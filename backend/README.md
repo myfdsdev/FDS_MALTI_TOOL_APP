@@ -19,7 +19,7 @@ Production-grade Node.js + TypeScript backend powering 28 AI tools through a uni
 cd backend
 npm install
 cp .env.example .env
-# Fill in MONGODB_URI, JWT secrets, GOOGLE_CLIENT_ID
+# Fill in MONGODB_URI, JWT secrets, GOOGLE_CLIENT_ID, and optional AI_API_KEY
 npm run dev
 ```
 
@@ -159,9 +159,15 @@ Just append to `src/config/tools.config.ts`:
 
 The route, validation, history tracking, and quota all work automatically.
 
-## Plugging in real AI
+## AI service
 
-Edit one file: `src/services/ai.service.ts`. Replace the body of `generate()` with a call to Claude or OpenAI. The rest of the system is unaffected.
+Every AI feature uses the same single environment key:
+
+```env
+AI_API_KEY=your_key
+```
+
+There are no provider-specific API key environment variables and no separate env variables for provider, model, or base URL.
 
 ## Deploy
 
@@ -176,7 +182,7 @@ Edit one file: `src/services/ai.service.ts`. Replace the body of `generate()` wi
 
 ```bash
 fly launch          # First time only
-fly secrets set MONGODB_URI="..." JWT_ACCESS_SECRET="..." JWT_REFRESH_SECRET="..." GOOGLE_CLIENT_ID="..." CLIENT_URL="..."
+fly secrets set MONGODB_URI="..." JWT_ACCESS_SECRET="..." JWT_REFRESH_SECRET="..." GOOGLE_CLIENT_ID="..." CLIENT_URL="..." AI_API_KEY="..."
 fly deploy
 ```
 

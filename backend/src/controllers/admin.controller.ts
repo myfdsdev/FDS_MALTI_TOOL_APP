@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { defaultModelFor } from "../config/ai.config.js";
+import { defaultModelFor, type AIProvider } from "../config/ai.config.js";
 import { env } from "../config/env.js";
 import { Generation } from "../models/Generation.model.js";
 import { GrowthReport } from "../models/GrowthReport.model.js";
@@ -20,16 +20,16 @@ import type {
 
 function getEnvFallbackConfig() {
   if (!env.AI_API_KEY) return null;
-  const provider = env.AI_PROVIDER || "openai-compatible";
+  const provider: AIProvider = "openai-compatible";
   return {
     provider,
-    model: env.AI_MODEL || defaultModelFor(provider),
-    baseUrl: env.AI_BASE_URL || null,
+    model: defaultModelFor(provider),
+    baseUrl: null,
   };
 }
 
 function toSettingsResponse(doc: SettingsDocument) {
-  const key = doc.aiApiKey || doc.anthropicApiKey;
+  const key = doc.aiApiKey;
   const envFallback = getEnvFallbackConfig();
   const provider = doc.aiProvider || "openai-compatible";
 
@@ -207,7 +207,6 @@ export const updateSettings = async (req: Request, res: Response) => {
   }
   if (aiApiKey !== undefined) {
     settings.aiApiKey = aiApiKey === "" ? undefined : aiApiKey;
-    if (aiApiKey === "") settings.anthropicApiKey = undefined;
   }
   if (aiModel !== undefined) settings.aiModel = aiModel;
   if (aiBaseUrl !== undefined) {

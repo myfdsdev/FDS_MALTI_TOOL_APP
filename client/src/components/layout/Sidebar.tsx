@@ -10,6 +10,7 @@ import {
   Link2,
   LayoutGrid,
   History,
+  Wallet,
   PanelLeftClose,
   PanelLeftOpen,
   Shield,
@@ -129,6 +130,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} collapsed={isCollapsed} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} collapsed={isCollapsed} />
+              <FinanceNavItem onNavigate={onClose} collapsed={isCollapsed} />
               <AdminNavItem onNavigate={onClose} collapsed={isCollapsed} />
             </ul>
 
@@ -198,6 +200,27 @@ function SidebarItem({
         {!collapsed && <span className="truncate">{label}</span>}
       </NavLink>
     </li>
+  );
+}
+
+function FinanceNavItem({
+  onNavigate,
+  collapsed,
+}: {
+  onNavigate: () => void;
+  collapsed: boolean;
+}) {
+  const { isWorkspaceDisabled } = useFeatureFlags();
+  if (isWorkspaceDisabled("finance")) return null;
+  return (
+    <SidebarItem
+      to="/finance"
+      icon={Wallet}
+      label="Finance"
+      onNavigate={onNavigate}
+      collapsed={collapsed}
+      end={false}
+    />
   );
 }
 

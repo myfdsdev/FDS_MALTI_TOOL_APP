@@ -17,9 +17,10 @@ Start here when you need to understand the app features and data flow. Each main
 | [Link Saver](./features/10-link-saver.md) | URL preview, scoped browser history, save preview as note. |
 | [Resumes](./features/11-resumes.md) | Resume builder, AI helpers, share, PDF/DOCX export. |
 | [Growth Reports](./features/12-growth-reports.md) | AI-required website growth reports with share/export flow. |
-| [Profile And AI Settings](./features/13-profile-ai-settings.md) | User AI provider/model/key settings. |
+| [Profile And AI Settings](./features/13-profile-ai-settings.md) | Unified AI service/provider/model/key settings. |
 | [Admin](./features/14-admin.md) | Admin stats, users, settings, cleanup flow. |
 | [Data Isolation](./features/15-data-isolation.md) | User-scoped cache, storage, and backend ownership rules. |
+| [Personal Finance App Roadmap](./features/16-personal-finance-app-roadmap.md) | Finance workspace roadmap, implementation starter, AI plan, and flowcharts. |
 | [Detailed Data Isolation Flow](./data-isolation-flow.md) | Extra implementation notes for account data separation. |
 | [Detailed Growth Reports](./growth-reports.md) | Larger architecture notes for Growth Reports. |
 

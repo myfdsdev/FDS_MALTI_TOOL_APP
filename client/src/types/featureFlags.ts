@@ -5,7 +5,8 @@ export type WorkspaceKey =
   | "notes"
   | "link-saver"
   | "resumes"
-  | "reports";
+  | "reports"
+  | "finance";
 
 export const ALL_WORKSPACE_KEYS: WorkspaceKey[] = [
   "ideas",
@@ -15,6 +16,7 @@ export const ALL_WORKSPACE_KEYS: WorkspaceKey[] = [
   "link-saver",
   "resumes",
   "reports",
+  "finance",
 ];
 
 export const WORKSPACE_LABELS: Record<WorkspaceKey, string> = {
@@ -25,6 +27,7 @@ export const WORKSPACE_LABELS: Record<WorkspaceKey, string> = {
   "link-saver": "Link Saver",
   resumes: "Resumes",
   reports: "Growth Reports",
+  finance: "Personal Finance",
 };
 
 export interface PublicFeatureFlags {

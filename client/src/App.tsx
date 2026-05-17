@@ -19,6 +19,10 @@ import ReportsListPage from "@/pages/business/ReportsListPage";
 import NewReportPage from "@/pages/business/NewReportPage";
 import ReportViewerPage from "@/pages/business/ReportViewerPage";
 import BusinessCalendarPage from "@/pages/business/BusinessCalendarPage";
+import FinanceDashboardPage from "@/pages/finance/FinanceDashboardPage";
+import FinanceTransactionsPage from "@/pages/finance/TransactionsPage";
+import FinanceBudgetsPage from "@/pages/finance/BudgetsPage";
+import FinanceSavingsGoalsPage from "@/pages/finance/SavingsGoalsPage";
 import PublicReport from "@/pages/PublicReport";
 import CategoryPage from "@/pages/CategoryPage";
 import Tool from "@/pages/Tool";
@@ -100,6 +104,10 @@ export default function App() {
           <Route path="/business/resumes/templates" element={<Navigate to="/business/resumes" replace />} />
           <Route path="/business/resumes/:id" element={<WorkspaceGate workspace="resumes"><ResumeBuilderPage /></WorkspaceGate>} />
           <Route path="/business/projects/:projectId" element={<WorkspaceGate workspace="projects"><Project /></WorkspaceGate>} />
+          <Route path="/finance" element={<WorkspaceGate workspace="finance"><FinanceDashboardPage /></WorkspaceGate>} />
+          <Route path="/finance/transactions" element={<WorkspaceGate workspace="finance"><FinanceTransactionsPage /></WorkspaceGate>} />
+          <Route path="/finance/budgets" element={<WorkspaceGate workspace="finance"><FinanceBudgetsPage /></WorkspaceGate>} />
+          <Route path="/finance/savings-goals" element={<WorkspaceGate workspace="finance"><FinanceSavingsGoalsPage /></WorkspaceGate>} />
           <Route path="/business-ideas" element={<WorkspaceGate workspace="ideas"><BusinessIdeas /></WorkspaceGate>} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/tools/:toolId" element={<Tool />} />

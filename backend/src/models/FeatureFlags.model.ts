@@ -15,7 +15,8 @@ export type WorkspaceKey =
   | "notes"
   | "link-saver"
   | "resumes"
-  | "reports";
+  | "reports"
+  | "finance";
 
 export const ALL_WORKSPACE_KEYS: WorkspaceKey[] = [
   "ideas",
@@ -25,6 +26,7 @@ export const ALL_WORKSPACE_KEYS: WorkspaceKey[] = [
   "link-saver",
   "resumes",
   "reports",
+  "finance",
 ];
 
 export interface FeatureFlagsDocument extends Document {

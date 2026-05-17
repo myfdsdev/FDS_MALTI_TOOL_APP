@@ -2,7 +2,7 @@
 
 ## Feature Description
 
-Profile lets a user view account details, theme preferences, and AI provider settings. AI settings can store provider, model, optional base URL, and API key for that user. Environment-level AI config can also be used as a fallback.
+Profile lets a user view account details, theme preferences, and AI service settings. User AI settings can store provider, model, optional base URL, and API key. Environment-level AI fallback is intentionally only `AI_API_KEY`.
 
 ## Flowchart
 

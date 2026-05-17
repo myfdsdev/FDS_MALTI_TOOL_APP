@@ -19,3 +19,4 @@ Each feature has its own Markdown file with a feature description, Mermaid flowc
 | Profile And AI Settings | [13-profile-ai-settings.md](./13-profile-ai-settings.md) |
 | Admin | [14-admin.md](./14-admin.md) |
 | Data Isolation | [15-data-isolation.md](./15-data-isolation.md) |
+| Personal Finance App Roadmap | [16-personal-finance-app-roadmap.md](./16-personal-finance-app-roadmap.md) |

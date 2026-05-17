@@ -11,6 +11,7 @@ import {
   LineChart,
   Link2,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
@@ -39,6 +40,15 @@ const SHORTCUTS: Shortcut[] = [
     workspace: "ideas",
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuARQmYQkA-1BRYYz__Isf9lSU-wzXtCej8vdcDLTmeCT59oqs756sS2rNwkHWvNB-OrodEbIlKbD572ou1OF32lyuP7JKlLyfK-WDjEbpER_kdslEzXCBg2fVqDui4G7KIQoOhVriEZ7T2pRZ5Jbd6JJflCFHvlvEbrZTSpUT3_SSCoAiRPbEdra6VyCyNT-yl-dYl3KJFT_Fx2cbG-kAmqj9H9G4MBuEOpxChbhyyNsN02ii45e9Ybm0Q_2bVp5MF-0cQXY80Y9I0",
+  },
+  {
+    to: "/finance",
+    title: "Personal finance",
+    description: "Track expenses, salary, budgets, and savings goals in one place.",
+    icon: Wallet,
+    workspace: "finance",
+    image:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=60",
   },
   {
     to: "/business/projects",
