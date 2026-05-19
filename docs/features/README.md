@@ -20,3 +20,5 @@ Each feature has its own Markdown file with a feature description, Mermaid flowc
 | Admin | [14-admin.md](./14-admin.md) |
 | Data Isolation | [15-data-isolation.md](./15-data-isolation.md) |
 | Personal Finance App Roadmap | [16-personal-finance-app-roadmap.md](./16-personal-finance-app-roadmap.md) |
+| Remotion Video Generation Roadmap | [17-remotion-video-generation-roadmap.md](./17-remotion-video-generation-roadmap.md) |
+| Gig Builder | [18-gig-builder.md](./18-gig-builder.md) |

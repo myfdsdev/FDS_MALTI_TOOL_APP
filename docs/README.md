@@ -21,6 +21,8 @@ Start here when you need to understand the app features and data flow. Each main
 | [Admin](./features/14-admin.md) | Admin stats, users, settings, cleanup flow. |
 | [Data Isolation](./features/15-data-isolation.md) | User-scoped cache, storage, and backend ownership rules. |
 | [Personal Finance App Roadmap](./features/16-personal-finance-app-roadmap.md) | Finance workspace roadmap, implementation starter, AI plan, and flowcharts. |
+| [Remotion Video Generation Roadmap](./features/17-remotion-video-generation-roadmap.md) | Professional Remotion video module plan, file structure, UI, AI flow, and render architecture. |
+| [Gig Builder](./features/18-gig-builder.md) | Freelancer gig generator workflow, AI stages, sharing, exports, and review checklist. |
 | [Detailed Data Isolation Flow](./data-isolation-flow.md) | Extra implementation notes for account data separation. |
 | [Detailed Growth Reports](./growth-reports.md) | Larger architecture notes for Growth Reports. |
 

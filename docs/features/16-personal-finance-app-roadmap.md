@@ -24,6 +24,7 @@ Core features:
 - Salary and income tracking.
 - Monthly budget planning.
 - Savings goals with progress.
+- Multiple currency support, so `$`/USD is inactive unless the user chooses USD.
 - Finance dashboard with monthly totals and recent activity.
 
 V1 should avoid:
@@ -34,13 +35,13 @@ V1 should avoid:
 - Complex accounting.
 - AI-only workflows.
 
-Manual entry is the first data input method. The user can add an expense or income item in under 30 seconds.
+Manual entry is the first data input method. The user can add an expense or income item in under 30 seconds. The app should let each user choose a preferred display currency, and every money record should store its currency explicitly. Do not show `$` as the default symbol; only show `$` after the user selects USD.
 
 ### Phase Roadmap
 
 | Phase | Goal | Features |
 |---|---|---|
-| Phase 1 | Manual finance tracker | Expenses, salary/income, budgets, savings goals, dashboard |
+| Phase 1 | Manual finance tracker | Expenses, salary/income, budgets, savings goals, multi-currency display, dashboard |
 | Phase 2 | Better tracking | Charts, recurring transactions, category settings, CSV import/export |
 | Phase 3 | AI finance coach | Monthly summaries, budget suggestions, savings predictions, spending warnings |
 | Phase 4 | Bigger product | Integrations, reminders, household budgets, premium insights |
@@ -71,6 +72,8 @@ Add Finance as a new authenticated workspace:
 - Sidebar item: "Finance"
 - Dashboard shortcut card: "Personal Finance"
 - Optional workspace feature flag key: `finance`
+- User finance setting: preferred display currency, such as INR, EUR, GBP, AED, CAD, AUD, JPY, USD, or other ISO currency codes.
+- Currency selector in onboarding/settings; USD is not preselected unless the user chooses it.
 
 Finance should follow the same user-owned data rules as business projects, notes, resumes, and reports. A user must never see another user's finance data.
 
@@ -121,6 +124,7 @@ Recommended first models:
   - user
   - type: `expense` or `income`
   - amount
+  - currency
   - category
   - date
   - note
@@ -128,6 +132,7 @@ Recommended first models:
 - `FinanceBudget`
   - user
   - month
+  - currency
   - category, optional for total monthly budget
   - limitAmount
 - `SavingsGoal`
@@ -135,8 +140,11 @@ Recommended first models:
   - name
   - targetAmount
   - currentAmount
+  - currency
   - targetDate, optional
   - status
+
+Store money as `{ amount, currency }`, not as a formatted string. Formatting belongs in the frontend. This prevents `$` from being hardcoded into the database, API, or UI. The `$` symbol is inactive by default and must appear only for records or displays using `USD`.
 
 ### API Shape
 
@@ -225,6 +233,8 @@ Good AI features:
 - Overspending warnings.
 - "Where can I save money?" assistant.
 - Subscription or recurring spending detection after recurring data exists.
+- Currency-aware insights, where AI clearly mentions the user's selected currency.
+- No AI output should assume dollars unless the selected currency is `USD`.
 
 AI must use the app's existing single backend env key:
 
@@ -251,6 +261,8 @@ Frontend tests:
 - Finance dashboard renders an empty state.
 - Adding an expense updates monthly spending.
 - Adding salary or income updates monthly income.
+- Currency selector changes displayed symbols and formatting.
+- `$` is hidden/inactive unless USD is selected.
 - Budget remaining amount displays correctly.
 - Savings goal progress displays correctly.
 - Month selector changes displayed totals.
@@ -269,6 +281,8 @@ The roadmap is ready to implement when:
 - Backend models and routes are named.
 - Frontend starter folders are named.
 - User data ownership rules are explicit.
+- Multi-currency storage and display are explicit, with no hardcoded `$`.
+- USD/`$` is inactive by default and only appears when selected.
 - AI is planned as a later enhancement using only `AI_API_KEY`.
 - The diagrams explain user flow, backend flow, and AI flow.
 
@@ -278,4 +292,4 @@ The roadmap is ready to implement when:
 - V1 is the Core Tracker MVP.
 - Manual entry is the first input method.
 - AI finance features are Phase 3, not required for the first release.
-- Default currency can start as a simple display setting, with INR or user-selectable currency decided during implementation.
+- Currency is user-selectable from the first release. INR can be the recommended default, but `$`/USD must be inactive unless the user explicitly selects USD.

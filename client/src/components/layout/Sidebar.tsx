@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   Briefcase,
+  BriefcaseBusiness,
   ChevronDown,
   FileText,
   FileUser,
@@ -129,6 +130,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             <ul className="space-y-1">
               <SidebarItem to="/dashboard" icon={LayoutGrid} label="Dashboard" onNavigate={onClose} collapsed={isCollapsed} />
+              <SidebarItem to="/gigs" icon={BriefcaseBusiness} label="Gigs" onNavigate={onClose} collapsed={isCollapsed} end={false} />
               <SidebarItem to="/history" icon={History} label="History" onNavigate={onClose} collapsed={isCollapsed} />
               <FinanceNavItem onNavigate={onClose} collapsed={isCollapsed} />
               <AdminNavItem onNavigate={onClose} collapsed={isCollapsed} />

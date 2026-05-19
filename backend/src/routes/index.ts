@@ -10,6 +10,8 @@ import resumeRoutes from "./resume.routes.js";
 import publicResumeRoutes from "./publicResume.routes.js";
 import reportRoutes from "./report.routes.js";
 import publicReportRoutes from "./publicReport.routes.js";
+import gigRoutes from "./gig.routes.js";
+import publicGigRoutes from "./publicGig.routes.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { getPublicFeatureFlags } from "../controllers/featureFlags.controller.js";
 
@@ -38,8 +40,10 @@ router.use("/business", businessRoutes);
 router.use("/finance", financeRoutes);
 router.use("/business/resumes", resumeRoutes);
 router.use("/business/reports", reportRoutes);
+router.use("/gigs", gigRoutes);
 router.use("/public", publicResumeRoutes);
 router.use("/public/reports", publicReportRoutes);
+router.use("/public/gigs", publicGigRoutes);
 
 // Authenticated users can read the current feature-flag state to drive their UI.
 router.get("/feature-flags", requireAuth, getPublicFeatureFlags);

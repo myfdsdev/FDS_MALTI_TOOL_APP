@@ -24,6 +24,10 @@ import FinanceTransactionsPage from "@/pages/finance/TransactionsPage";
 import FinanceBudgetsPage from "@/pages/finance/BudgetsPage";
 import FinanceSavingsGoalsPage from "@/pages/finance/SavingsGoalsPage";
 import PublicReport from "@/pages/PublicReport";
+import GigsLibrary from "@/pages/gigs/GigsLibrary";
+import NewGigPage from "@/pages/gigs/NewGigPage";
+import GigViewerPage from "@/pages/gigs/GigViewerPage";
+import PublicGig from "@/pages/PublicGig";
 import CategoryPage from "@/pages/CategoryPage";
 import Tool from "@/pages/Tool";
 import History from "@/pages/History";
@@ -83,6 +87,7 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/r/:slug" element={<PublicResume />} />
         <Route path="/reports/r/:slug" element={<PublicReport />} />
+        <Route path="/gigs/g/:slug" element={<PublicGig />} />
 
         <Route
           element={
@@ -109,6 +114,9 @@ export default function App() {
           <Route path="/finance/budgets" element={<WorkspaceGate workspace="finance"><FinanceBudgetsPage /></WorkspaceGate>} />
           <Route path="/finance/savings-goals" element={<WorkspaceGate workspace="finance"><FinanceSavingsGoalsPage /></WorkspaceGate>} />
           <Route path="/business-ideas" element={<WorkspaceGate workspace="ideas"><BusinessIdeas /></WorkspaceGate>} />
+          <Route path="/gigs" element={<GigsLibrary />} />
+          <Route path="/gigs/new" element={<NewGigPage />} />
+          <Route path="/gigs/:id" element={<GigViewerPage />} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/tools/:toolId" element={<Tool />} />
           <Route path="/history" element={<History />} />
