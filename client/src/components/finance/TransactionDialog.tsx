@@ -33,7 +33,8 @@ const transactionSchema = z.object({
     .default(""),
 });
 
-export type TransactionDialogValues = z.infer<typeof transactionSchema>;
+type TransactionDialogInput = z.input<typeof transactionSchema>;
+export type TransactionDialogValues = z.output<typeof transactionSchema>;
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -56,11 +57,11 @@ export function TransactionDialog({
   isPending?: boolean;
   onSubmit: (values: TransactionDialogValues) => Promise<void> | void;
 }) {
-  const form = useForm<TransactionDialogValues>({
+  const form = useForm<TransactionDialogInput, unknown, TransactionDialogValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: defaultValues?.type ?? "expense",
-      amount: defaultValues?.amount ?? ("" as unknown as number),
+      amount: defaultValues?.amount ?? "",
       category: defaultValues?.category ?? "",
       date: defaultValues?.date ?? todayIso(),
       note: defaultValues?.note ?? "",
@@ -72,7 +73,7 @@ export function TransactionDialog({
     if (!open) return;
     form.reset({
       type: defaultValues?.type ?? "expense",
-      amount: defaultValues?.amount ?? ("" as unknown as number),
+      amount: defaultValues?.amount ?? "",
       category: defaultValues?.category ?? "",
       date: defaultValues?.date ?? todayIso(),
       note: defaultValues?.note ?? "",

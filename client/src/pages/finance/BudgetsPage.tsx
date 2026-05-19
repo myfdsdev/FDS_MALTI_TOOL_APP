@@ -42,7 +42,8 @@ const budgetFormSchema = z.object({
   category: z.string().trim().max(60).optional().default(""),
   limitAmount: z.coerce.number().positive("Limit must be greater than 0"),
 });
-type BudgetFormValues = z.infer<typeof budgetFormSchema>;
+type BudgetFormInput = z.input<typeof budgetFormSchema>;
+type BudgetFormValues = z.output<typeof budgetFormSchema>;
 
 export default function BudgetsPage() {
   const [month, setMonth] = React.useState<string>(currentMonthKey());
@@ -240,12 +241,12 @@ function BudgetDialog({
   isPending: boolean;
   onSubmit: (values: BudgetFormValues) => Promise<void>;
 }) {
-  const form = useForm<BudgetFormValues>({
+  const form = useForm<BudgetFormInput, unknown, BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
       scope: "category",
       category: "",
-      limitAmount: "" as unknown as number,
+      limitAmount: "",
     },
   });
 
@@ -254,7 +255,7 @@ function BudgetDialog({
     form.reset({
       scope: editing ? (editing.category ? "category" : "overall") : "category",
       category: editing?.category ?? "",
-      limitAmount: editing?.limitAmount ?? ("" as unknown as number),
+      limitAmount: editing?.limitAmount ?? "",
     });
   }, [editing, form, open]);
 

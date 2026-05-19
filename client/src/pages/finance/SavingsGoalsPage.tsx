@@ -33,7 +33,8 @@ const goalFormSchema = z.object({
   targetDate: z.string().optional().default(""),
   status: z.enum(["active", "completed", "archived"]).default("active"),
 });
-type GoalFormValues = z.infer<typeof goalFormSchema>;
+type GoalFormInput = z.input<typeof goalFormSchema>;
+type GoalFormValues = z.output<typeof goalFormSchema>;
 
 export default function SavingsGoalsPage() {
   const { data: goals = [], isLoading } = useListSavingsGoals();
@@ -200,11 +201,11 @@ function GoalDialog({
   isPending: boolean;
   onSubmit: (values: GoalFormValues) => Promise<void>;
 }) {
-  const form = useForm<GoalFormValues>({
+  const form = useForm<GoalFormInput, unknown, GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
     defaultValues: {
       name: "",
-      targetAmount: "" as unknown as number,
+      targetAmount: "",
       currentAmount: 0,
       targetDate: "",
       status: "active",
@@ -215,7 +216,7 @@ function GoalDialog({
     if (!open) return;
     form.reset({
       name: editing?.name ?? "",
-      targetAmount: editing?.targetAmount ?? ("" as unknown as number),
+      targetAmount: editing?.targetAmount ?? "",
       currentAmount: editing?.currentAmount ?? 0,
       targetDate: editing?.targetDate ? editing.targetDate.slice(0, 10) : "",
       status: editing?.status ?? "active",
