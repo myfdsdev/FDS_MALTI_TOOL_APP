@@ -31,8 +31,8 @@ const gigContentZ = z.object({
   title: z.string().min(1),
   alternativeTitles: z.array(z.string().min(1)).length(3),
   category: z.string().min(1),
-  tags: z.array(tagSchema).length(3),
-  seoKeywords: z.array(z.string().min(1)).length(3),
+  tags: z.array(tagSchema).min(5).max(8),
+  seoKeywords: z.array(z.string().min(1)).min(5).max(8),
   description: z.string().min(100),
   packages: z.object({
     basic: packageSchema,
@@ -90,9 +90,36 @@ function stripFences(raw: string): string {
   return text;
 }
 
+/**
+ * Some models double-escape control characters when asked for JSON, so after
+ * JSON.parse a string field can contain a literal backslash-n ("\\n") instead
+ * of a real newline. Recursively convert those escape sequences back to real
+ * characters so stored content renders with proper line breaks.
+ */
+function deepUnescape<T>(value: T): T {
+  if (typeof value === "string") {
+    return value
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\n")
+      .replace(/\\t/g, "\t") as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => deepUnescape(v)) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = deepUnescape(v);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
+
 function parseOrNull(raw: string): unknown {
   try {
-    return JSON.parse(stripFences(raw));
+    return deepUnescape(JSON.parse(stripFences(raw)));
   } catch {
     return null;
   }
@@ -235,7 +262,7 @@ export async function improveGigSection(
   ].join("\n");
 
   const result = await generateWithProvider(config, system, user);
-  return stripFences(result.text).trim();
+  return deepUnescape(stripFences(result.text).trim());
 }
 
 function pickSection(section: ImproveSection, gig: GigContent | null): unknown {

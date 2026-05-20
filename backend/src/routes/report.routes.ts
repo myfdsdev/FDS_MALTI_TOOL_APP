@@ -10,6 +10,8 @@ import {
 import {
   createReport,
   deleteReport,
+  exportReportDocx,
+  exportReportPdf,
   getReport,
   listReports,
   retryReport,
@@ -24,6 +26,8 @@ router.use(requireWorkspaceEnabled("reports"));
 router.get("/", validate(listReportsQuerySchema, "query"), listReports);
 router.post("/", validate(createReportSchema), createReport);
 router.get("/:id", getReport);
+router.get("/:id/export/pdf", exportReportPdf);
+router.get("/:id/export/docx", exportReportDocx);
 router.post("/:id/retry", retryReport);
 router.delete("/:id", deleteReport);
 router.post("/:id/share", validate(shareReportSchema), updateShare);

@@ -93,7 +93,7 @@ export function ReportHeader({ report }: Props) {
           </Button>
 
           {report.content && (
-            <ReportExportMenu content={report.content} websiteUrl={report.websiteUrl} />
+            <ReportExportMenu reportId={report._id} content={report.content} websiteUrl={report.websiteUrl} />
           )}
 
           <Button

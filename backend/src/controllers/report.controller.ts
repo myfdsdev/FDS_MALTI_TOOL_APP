@@ -8,6 +8,8 @@ import { GrowthReport, type GrowthReportDocument } from "../models/GrowthReport.
 import { checkAndConsume } from "../services/usage.service.js";
 import { resolveAIConfigForUser } from "../services/ai/config.js";
 import { runReportGeneration } from "../services/report/index.js";
+import { renderReportPdf } from "../services/report/pdfExporter.js";
+import { renderReportDocx } from "../services/report/docxExporter.js";
 import { hostnameFromUrl } from "../services/report/scraper.js";
 import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
@@ -179,6 +181,40 @@ export const updateShare = asyncHandler(async (req: Request, res: Response) => {
     url,
     viewCount: report.share.viewCount,
   });
+});
+
+function safeFilename(title: string, ext: string): string {
+  const cleaned =
+    (title || "growth-report")
+      .replace(/[^a-z0-9-_ ]/gi, "")
+      .replace(/\s+/g, "_")
+      .slice(0, 80) || "growth-report";
+  return `${cleaned}.${ext}`;
+}
+
+export const exportReportPdf = asyncHandler(async (req: Request, res: Response) => {
+  const authedReq = requireUser(req);
+  const report = await findOwnedReportOr404(authedReq.user._id, req.params.id);
+  const buffer = await renderReportPdf(report);
+  const name = report.content?.websiteTitle || report.hostname;
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeFilename(name, "pdf")}"`);
+  res.setHeader("Content-Length", buffer.length.toString());
+  res.end(buffer);
+});
+
+export const exportReportDocx = asyncHandler(async (req: Request, res: Response) => {
+  const authedReq = requireUser(req);
+  const report = await findOwnedReportOr404(authedReq.user._id, req.params.id);
+  const buffer = await renderReportDocx(report);
+  const name = report.content?.websiteTitle || report.hostname;
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  );
+  res.setHeader("Content-Disposition", `attachment; filename="${safeFilename(name, "docx")}"`);
+  res.setHeader("Content-Length", buffer.length.toString());
+  res.end(buffer);
 });
 
 export const getPublicReport = asyncHandler(async (req: Request, res: Response) => {

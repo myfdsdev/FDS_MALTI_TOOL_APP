@@ -12,10 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  downloadReportDocx,
+  downloadReportPdf,
   exportCsv,
-  exportDocx,
   exportHtml,
-  exportPdf,
   exportPptx,
   exportTxt,
   exportXlsx,
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import type { ReportContent } from "@/types/reports";
 
 interface Props {
+  reportId: string;
   content: ReportContent;
   websiteUrl: string;
 }
@@ -41,19 +42,20 @@ const ITEMS: { format: Format; label: string; icon: React.ComponentType<{ classN
   { format: "txt", label: "Plain text", icon: FileText },
 ];
 
-export function ReportExportMenu({ content, websiteUrl }: Props) {
+export function ReportExportMenu({ reportId, content, websiteUrl }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<Format | null>(null);
+  const title = content.websiteTitle || "growth-report";
 
   const run = async (format: Format) => {
     setBusy(format);
     try {
       switch (format) {
         case "pdf":
-          exportPdf(content, websiteUrl);
+          await downloadReportPdf(reportId, title);
           break;
         case "docx":
-          await exportDocx(content, websiteUrl);
+          await downloadReportDocx(reportId, title);
           break;
         case "pptx":
           await exportPptx(content, websiteUrl);

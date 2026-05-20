@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cleanText, cn } from "@/lib/utils";
 import { CopyButton } from "../../CopyButton";
 import type { OutreachMessages } from "@/types/gigs";
 
@@ -30,10 +30,10 @@ export function OutreachSection({ outreach }: Props) {
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase text-muted-foreground">Subject</p>
-                <CopyButton value={outreach.coldEmail.subject} ariaLabel="Copy email subject" />
+                <CopyButton value={cleanText(outreach.coldEmail.subject)} ariaLabel="Copy email subject" />
               </div>
               <p className="rounded-md border border-border bg-background px-3 py-2 text-sm font-medium">
-                {outreach.coldEmail.subject}
+                {cleanText(outreach.coldEmail.subject)}
               </p>
             </div>
             <MessageBlock label="Body" value={outreach.coldEmail.body} />
@@ -88,14 +88,15 @@ export function OutreachSection({ outreach }: Props) {
 }
 
 function MessageBlock({ label, value }: { label: string; value: string }) {
+  const text = cleanText(value);
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</p>
-        <CopyButton value={value} ariaLabel={`Copy ${label}`} />
+        <CopyButton value={text} ariaLabel={`Copy ${label}`} />
       </div>
-      <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-background px-3 py-2 text-sm">
-        {value}
+      <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-background px-3 py-2 text-sm font-sans">
+        {text}
       </pre>
     </div>
   );

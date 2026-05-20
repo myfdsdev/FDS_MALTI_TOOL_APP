@@ -141,7 +141,6 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
                 </p>
               )}
               <ul className="space-y-1">
-                <SidebarItem to="/gigs" icon={BriefcaseBusiness} label="Gigs" onNavigate={onClose} collapsed={isCollapsed} end={false} />
                 <FinanceNavItem onNavigate={onClose} collapsed={isCollapsed} />
                 <BusinessIdeasNav onNavigate={onClose} collapsed={isCollapsed} />
                 <BusinessManagementNav onNavigate={onClose} collapsed={isCollapsed} />
@@ -261,7 +260,8 @@ function BusinessManagementNav({
   collapsed: boolean;
 }) {
   const location = useLocation();
-  const inSection = location.pathname.startsWith("/business");
+  const inGigs = location.pathname.startsWith("/gigs");
+  const inSection = location.pathname.startsWith("/business") || inGigs;
   const [open, setOpen] = useState(inSection);
   const { isWorkspaceDisabled, isAnyWorkspaceEnabled } = useFeatureFlags();
 
@@ -354,6 +354,23 @@ function BusinessManagementNav({
                 </NavLink>
               </li>
             ))}
+            <li>
+              <NavLink
+                to="/gigs"
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  cn(
+                    "ml-3 mt-1 flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  )
+                }
+              >
+                <BriefcaseBusiness className="size-3.5" />
+                Gigs
+              </NavLink>
+            </li>
           </motion.ul>
         )}
       </AnimatePresence>
