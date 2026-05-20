@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Circle, Loader2, Sparkles, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { TypewriterLoader } from "@/components/common/TypewriterLoader";
 import { cn } from "@/lib/utils";
 import type { GigGenerationStages, StageStatus } from "@/types/gigs";
 
@@ -60,13 +61,9 @@ export function GenerationProgressView({ stages }: Props) {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-12 text-center">
-      <motion.div
-        animate={reducedMotion ? undefined : { scale: [1, 1.1, 1], rotate: [0, 8, -8, 0] }}
-        transition={{ duration: 2.4, repeat: Infinity }}
-        className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary"
-      >
-        <Sparkles className="size-7" />
-      </motion.div>
+      <div className="flex h-20 w-full items-center justify-center">
+        <TypewriterLoader />
+      </div>
 
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">Crafting your gig</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">

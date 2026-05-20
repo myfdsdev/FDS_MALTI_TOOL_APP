@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
 import { ensureGigShareSlugIndex } from "../models/Gig.model.js";
+import { ensureReportShareSlugIndex } from "../models/GrowthReport.model.js";
 
 mongoose.set("strictQuery", true);
 
@@ -13,6 +14,7 @@ export const connectDatabase = async (): Promise<void> => {
       maxPoolSize: 10,
     });
     await ensureGigShareSlugIndex();
+    await ensureReportShareSlugIndex();
     logger.info("✅ MongoDB connected");
   } catch (err) {
     logger.fatal({ err }, "❌ MongoDB connection failed");

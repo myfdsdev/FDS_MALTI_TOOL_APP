@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { ReportStage } from "@/types/reports";
 import { STAGE_LABEL } from "@/types/reports";
+import { TypewriterLoader } from "@/components/common/TypewriterLoader";
 
 interface Props {
   stage: ReportStage;
@@ -37,8 +37,8 @@ export function ProgressIndicator({ stage }: Props) {
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-6 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-      <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Loader2 className="size-7 animate-spin" />
+      <div className="flex h-20 w-full items-center justify-center">
+        <TypewriterLoader />
       </div>
       <div>
         <p className="text-lg font-semibold">{STAGE_LABEL[stage]}</p>

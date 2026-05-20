@@ -335,7 +335,9 @@ export async function exportXlsx(content: ReportContent, websiteUrl: string, bra
 // rendered file and trigger a browser download.
 
 async function downloadReportFile(reportId: string, ext: "pdf" | "docx", title: string): Promise<void> {
-  const response = await api.get<Blob>(`/reports/${reportId}/export/${ext}`, { responseType: "blob" });
+  const response = await api.get<Blob>(`/business/reports/${reportId}/export/${ext}`, {
+    responseType: "blob",
+  });
   triggerBlobDownload(response.data, safeFilename(title || "growth-report", ext));
 }
 

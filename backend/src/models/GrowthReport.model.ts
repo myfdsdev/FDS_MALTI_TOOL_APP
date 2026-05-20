@@ -219,8 +219,67 @@ const growthReportSchema = new Schema<GrowthReportDocument>(
 
 growthReportSchema.index({ user: 1, createdAt: -1 });
 growthReportSchema.index({ user: 1, status: 1 });
-growthReportSchema.index({ "share.slug": 1 }, { unique: true, sparse: true });
+
+// A plain `unique + sparse` index still rejects multiple documents whose
+// `share.slug` is explicitly `null` (the schema default), which makes the
+// second un-shared report fail to insert with an E11000 duplicate-key error.
+// A partial index that only covers string slugs avoids that entirely.
+const SHARE_SLUG_INDEX_NAME = "report_share_slug_unique";
+
+growthReportSchema.index(
+  { "share.slug": 1 },
+  {
+    name: SHARE_SLUG_INDEX_NAME,
+    unique: true,
+    partialFilterExpression: { "share.slug": { $type: "string" } },
+  }
+);
 
 export const GrowthReport: Model<GrowthReportDocument> =
   mongoose.models.GrowthReport ||
   mongoose.model<GrowthReportDocument>("GrowthReport", growthReportSchema);
+
+type MongoIndexInfo = {
+  name?: string;
+  key?: Record<string, unknown>;
+  unique?: boolean;
+  partialFilterExpression?: Record<string, unknown>;
+};
+
+const isShareSlugIndex = (index: MongoIndexInfo): boolean =>
+  index.key?.["share.slug"] === 1 && Object.keys(index.key).length === 1;
+
+const isDesiredShareSlugIndex = (index: MongoIndexInfo): boolean =>
+  index.name === SHARE_SLUG_INDEX_NAME &&
+  index.unique === true &&
+  JSON.stringify(index.partialFilterExpression) ===
+    JSON.stringify({ "share.slug": { $type: "string" } });
+
+/**
+ * Migrates the legacy `unique + sparse` slug index (which collides on null
+ * slugs) to a partial index, and clears any stored null slugs so the partial
+ * index can build. Safe to run on every boot — it's a no-op once converged.
+ */
+export const ensureReportShareSlugIndex = async (): Promise<void> => {
+  await GrowthReport.updateMany(
+    { "share.slug": null },
+    { $unset: { "share.slug": "" } }
+  );
+
+  const indexes = (await GrowthReport.collection.indexes()) as MongoIndexInfo[];
+  const shareSlugIndexes = indexes.filter(isShareSlugIndex);
+
+  for (const index of shareSlugIndexes) {
+    if (!index.name || isDesiredShareSlugIndex(index)) continue;
+    await GrowthReport.collection.dropIndex(index.name);
+  }
+
+  await GrowthReport.collection.createIndex(
+    { "share.slug": 1 },
+    {
+      name: SHARE_SLUG_INDEX_NAME,
+      unique: true,
+      partialFilterExpression: { "share.slug": { $type: "string" } },
+    }
+  );
+};
