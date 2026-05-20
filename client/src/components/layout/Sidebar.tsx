@@ -203,27 +203,6 @@ function SidebarItem({
   );
 }
 
-function FinanceNavItem({
-  onNavigate,
-  collapsed,
-}: {
-  onNavigate: () => void;
-  collapsed: boolean;
-}) {
-  const { isWorkspaceDisabled } = useFeatureFlags();
-  if (isWorkspaceDisabled("finance")) return null;
-  return (
-    <SidebarItem
-      to="/finance"
-      icon={Wallet}
-      label="Finance"
-      onNavigate={onNavigate}
-      collapsed={collapsed}
-      end={false}
-    />
-  );
-}
-
 function AdminNavItem({
   onNavigate,
   collapsed,
