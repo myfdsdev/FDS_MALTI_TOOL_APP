@@ -141,7 +141,6 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
                 </p>
               )}
               <ul className="space-y-1">
-                <FinanceNavItem onNavigate={onClose} collapsed={isCollapsed} />
                 <BusinessIdeasNav onNavigate={onClose} collapsed={isCollapsed} />
                 <BusinessManagementNav onNavigate={onClose} collapsed={isCollapsed} />
               </ul>
@@ -261,18 +260,17 @@ function BusinessManagementNav({
 }) {
   const location = useLocation();
   const inGigs = location.pathname.startsWith("/gigs");
-  const inSection = location.pathname.startsWith("/business") || inGigs;
+  const inFinance = location.pathname.startsWith("/finance");
+  const inSection = location.pathname.startsWith("/business") || inGigs || inFinance;
   const [open, setOpen] = useState(inSection);
-  const { isWorkspaceDisabled, isAnyWorkspaceEnabled } = useFeatureFlags();
+  const { isWorkspaceDisabled } = useFeatureFlags();
 
   const visibleSubItems = BUSINESS_SUB_ITEMS.filter(
     (item) => !isWorkspaceDisabled(item.workspace)
   );
+  const showFinance = !isWorkspaceDisabled("finance");
 
-  // If every Business sub-section is hidden, drop the whole group from the nav.
-  if (!isAnyWorkspaceEnabled(BUSINESS_SUB_ITEMS.map((i) => i.workspace))) {
-    return null;
-  }
+  // The group always renders because Gigs lives here and has no workspace gate.
 
   // Collapsed: render as a single icon link to the hub.
   if (collapsed) {
@@ -354,6 +352,25 @@ function BusinessManagementNav({
                 </NavLink>
               </li>
             ))}
+            {showFinance && (
+              <li>
+                <NavLink
+                  to="/finance"
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "ml-3 mt-1 flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    )
+                  }
+                >
+                  <Wallet className="size-3.5" />
+                  Finance
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink
                 to="/gigs"
