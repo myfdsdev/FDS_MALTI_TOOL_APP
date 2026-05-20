@@ -18,7 +18,6 @@ import { FAQsSection } from "./sections/FAQsSection";
 import { AddOnsSection } from "./sections/AddOnsSection";
 import { ThumbnailSection } from "./sections/ThumbnailSection";
 import { PortfolioIdeasSection } from "./sections/PortfolioIdeasSection";
-import { LeadStrategySection } from "./sections/LeadStrategySection";
 import { OutreachSection } from "./sections/OutreachSection";
 
 interface Props {
@@ -30,7 +29,6 @@ export function GigViewer({ gig, readOnly = false }: Props) {
   const [improveOpen, setImproveOpen] = useState(false);
   const regenerate = useRegenerateGig();
   const core = gig.content.gig;
-  const lead = gig.content.leadStrategy;
   const outreach = gig.content.outreach;
 
   const onRegenerate = async () => {
@@ -89,12 +87,6 @@ export function GigViewer({ gig, readOnly = false }: Props) {
         {!core && gig.generationStages.gig.status === "failed" && (
           <FailedSection name="Gig content" readOnly={readOnly} onRetry={onRegenerate} pending={regenerate.isPending} />
         )}
-
-        {lead ? (
-          <LeadStrategySection strategy={lead} />
-        ) : gig.generationStages.leads.status === "failed" ? (
-          <FailedSection name="Lead strategy" readOnly={readOnly} onRetry={onRegenerate} pending={regenerate.isPending} />
-        ) : null}
 
         {outreach ? (
           <OutreachSection outreach={outreach} />

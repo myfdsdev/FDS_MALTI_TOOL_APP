@@ -44,7 +44,7 @@ export default function PublicGig() {
     status: publicGig.status,
     generationStages: {
       gig: { status: publicGig.content.gig ? "done" : "failed" },
-      leads: { status: publicGig.content.leadStrategy ? "done" : "failed" },
+      leads: { status: "done" },
       outreach: { status: publicGig.content.outreach ? "done" : "failed" },
     },
     title: publicGig.title,

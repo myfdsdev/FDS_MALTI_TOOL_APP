@@ -19,18 +19,60 @@ function previewKey(apiKey?: string): string | null {
   return apiKey ? `...${apiKey.slice(-4)}` : null;
 }
 
+function configFromSingleApiKey(apiKey: string): ResolvedAIConfig {
+  const trimmedKey = apiKey.trim();
+
+  if (trimmedKey.startsWith("AIza")) {
+    const provider: AIProvider = "gemini";
+    return {
+      provider,
+      apiKey: trimmedKey,
+      model: defaultModelFor(provider),
+    };
+  }
+
+  if (trimmedKey.startsWith("sk-ant-")) {
+    const provider: AIProvider = "anthropic";
+    return {
+      provider,
+      apiKey: trimmedKey,
+      model: defaultModelFor(provider),
+    };
+  }
+
+  if (trimmedKey.startsWith("sk-or-v1-")) {
+    return {
+      provider: "openai-compatible",
+      apiKey: trimmedKey,
+      model: "openai/gpt-4.1-mini",
+      baseUrl: "https://openrouter.ai/api/v1",
+    };
+  }
+
+  if (trimmedKey.startsWith("gsk_")) {
+    return {
+      provider: "openai-compatible",
+      apiKey: trimmedKey,
+      model: "llama-3.1-8b-instant",
+      baseUrl: "https://api.groq.com/openai/v1",
+    };
+  }
+
+  const provider: AIProvider = "openai-compatible";
+  return {
+    provider,
+    apiKey: trimmedKey,
+    model: defaultModelFor(provider),
+  };
+}
+
 /**
  * Env fallback intentionally accepts only one variable: AI_API_KEY.
  * Provider/model/base URL stay as app defaults.
  */
 export function getAIConfigFromEnv(): ResolvedAIConfig | null {
   if (!env.AI_API_KEY) return null;
-  const provider: AIProvider = "openai-compatible";
-  return {
-    provider,
-    apiKey: env.AI_API_KEY,
-    model: defaultModelFor(provider),
-  };
+  return configFromSingleApiKey(env.AI_API_KEY);
 }
 
 export function resolveAIConfigForUser(user?: UserDocument | null): ResolvedAIConfig | null {
@@ -38,10 +80,14 @@ export function resolveAIConfigForUser(user?: UserDocument | null): ResolvedAICo
   const apiKey = settings?.aiApiKey;
 
   if (apiKey) {
+    if ((!settings?.aiProvider || settings.aiProvider === "openai-compatible") && !settings?.aiBaseUrl) {
+      return configFromSingleApiKey(apiKey);
+    }
+
     const provider = settings.aiProvider || "openai-compatible";
     return {
       provider,
-      apiKey,
+      apiKey: apiKey.trim(),
       model: settings.aiModel || defaultModelFor(provider),
       baseUrl: settings.aiBaseUrl || undefined,
     };

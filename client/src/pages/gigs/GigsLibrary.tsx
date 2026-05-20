@@ -52,8 +52,8 @@ export default function GigsLibrary() {
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">Gigs</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              AI-generated gig copy, lead strategy, and outreach messages for Fiverr, Upwork,
-              LinkedIn, Instagram and Freelancer.
+              AI-generated gig copy, tiered packages, SEO tags, FAQs, thumbnail concepts, portfolio
+              ideas, and outreach messages for Fiverr, Upwork, LinkedIn, Instagram and Freelancer.
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export default function GigsLibrary() {
                   </p>
                   <p className="mt-2 max-w-md text-sm text-muted-foreground">
                     {gigs.length === 0
-                      ? "Tell us about your service and we'll generate tier packages, SEO tags, outreach copy, and a lead strategy in one shot."
+                      ? "Tell us about your service and we'll generate tier packages, SEO tags, FAQs, thumbnail ideas, portfolio ideas, and outreach copy in one shot."
                       : "Try clearing filters or your search query."}
                   </p>
                 </div>

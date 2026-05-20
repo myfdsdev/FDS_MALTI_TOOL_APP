@@ -4,7 +4,6 @@ import { User } from "../../models/User.model.js";
 import { resolveAIConfigForUser } from "../ai/config.js";
 import {
   generateGigCore,
-  generateLeadStrategy,
   generateOutreach,
 } from "./generator.js";
 import { calculateGigScore } from "./scorer.js";
@@ -35,8 +34,8 @@ export async function runGeneration(gigId: string): Promise<void> {
           status: "failed",
           "generationStages.gig.status": "failed",
           "generationStages.gig.error": AI_REQUIRED_MESSAGE,
-          "generationStages.leads.status": "failed",
-          "generationStages.leads.error": AI_REQUIRED_MESSAGE,
+          "generationStages.leads.status": "done",
+          "generationStages.leads.error": null,
           "generationStages.outreach.status": "failed",
           "generationStages.outreach.error": AI_REQUIRED_MESSAGE,
           generationMs: Date.now() - start,
@@ -51,30 +50,26 @@ export async function runGeneration(gigId: string): Promise<void> {
         status: "processing",
         "generationStages.gig.status": "running",
         "generationStages.gig.error": null,
-        "generationStages.leads.status": "running",
+        "generationStages.leads.status": "done",
         "generationStages.leads.error": null,
         "generationStages.outreach.status": "running",
         "generationStages.outreach.error": null,
       },
     });
 
-    const results = await Promise.allSettled([
-      generateGigCore(config, gig.input),
-      generateLeadStrategy(config, gig.input),
-      generateOutreach(config, gig.input),
-    ]);
-
-    const [gigRes, leadsRes, outreachRes] = results;
-
-    // Persist each subtree independently with $set so parallel writes don't stomp.
+    const gigRes = await settleGeneration(() => generateGigCore(config, gig.input));
     await persistStage(gigId, "gig", "content.gig", gigRes);
-    await persistStage(gigId, "leads", "content.leadStrategy", leadsRes);
+
+    const outreachRes = await settleGeneration(() =>
+      generateOutreach(config, gig.input)
+    );
     await persistStage(gigId, "outreach", "content.outreach", outreachRes);
 
+    const results = [gigRes, outreachRes];
     const successCount = results.filter((r) => r.status === "fulfilled").length;
 
     let nextStatus: GigDocument["status"];
-    if (successCount === 3) nextStatus = "completed";
+    if (successCount === 2) nextStatus = "completed";
     else if (successCount === 0) nextStatus = "failed";
     else nextStatus = "partial";
 
@@ -109,10 +104,20 @@ export async function runGeneration(gigId: string): Promise<void> {
   }
 }
 
+async function settleGeneration<T>(
+  generate: () => Promise<T>
+): Promise<PromiseSettledResult<T>> {
+  try {
+    return { status: "fulfilled", value: await generate() };
+  } catch (reason) {
+    return { status: "rejected", reason };
+  }
+}
+
 async function persistStage(
   gigId: string,
-  stageKey: "gig" | "leads" | "outreach",
-  contentPath: "content.gig" | "content.leadStrategy" | "content.outreach",
+  stageKey: "gig" | "outreach",
+  contentPath: "content.gig" | "content.outreach",
   result: PromiseSettledResult<unknown>
 ): Promise<void> {
   if (result.status === "fulfilled") {

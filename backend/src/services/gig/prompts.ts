@@ -7,18 +7,18 @@ export interface GigPromptBundle {
 
 function inputSummary(input: GigInput): string {
   return [
-    `Service: ${input.serviceName}`,
+    `Service/Niche: ${input.serviceName}`,
     `Platform: ${input.platform}`,
     input.category ? `Category: ${input.category}` : null,
     `Target audience: ${input.targetAudience}`,
-    `Niche: ${input.niche}`,
+    `Niche details: ${input.niche}`,
     `Problem solved: ${input.problemSolved}`,
     `Buyer result: ${input.buyerResult}`,
     `Tools used: ${input.toolsUsed}`,
     `Delivery format: ${input.deliveryFormat}`,
     `Experience level: ${input.experienceLevel}`,
-    `Preferred tone: ${input.preferredTone}`,
-    `Pricing range: ${input.pricingMin}-${input.pricingMax} ${input.pricingCurrency}`,
+    `Tone instruction: ${input.preferredTone}`,
+    `Price range: ${input.pricingMin}-${input.pricingMax} ${input.pricingCurrency}`,
     `Typical delivery time: ${input.deliveryTime}`,
   ]
     .filter(Boolean)
@@ -26,102 +26,83 @@ function inputSummary(input: GigInput): string {
 }
 
 const JSON_RULES = [
-  "Respond with ONLY valid JSON that parses with JSON.parse.",
-  "Do NOT wrap the JSON in markdown fences. No commentary before or after.",
-  "Do NOT include trailing commas, comments, or unescaped control characters.",
+  "Respond with ONLY raw, valid JSON that compiles perfectly with JSON.parse.",
+  "Do NOT wrap the JSON in markdown fences. Do not use ```json or ```.",
+  "Do NOT include any introductory text, outro text, or conversational commentary.",
+  "Do NOT include trailing commas, JavaScript comments, or unescaped control characters.",
+  "CRITICAL: The description field contains text and bullet points. You MUST explicitly escape all newlines as \"\\n\" and all inner double quotes as \"\\\"\" to prevent breaking the JSON structure.",
   "Do NOT use fake guarantees such as '100% guaranteed', 'make money overnight', or 'get rich quick'.",
-  "Avoid spammy language. Stay specific to the provided niche.",
+  "Do NOT use phrases like 'I want leads finding' or guarantee customer generation.",
+  "Avoid spammy language. Stay specific to the provided niche and focus strictly on technical and design delivery.",
 ].join("\n");
 
 function toneInstruction(tone: GigInput["preferredTone"]): string {
   switch (tone) {
     case "professional":
-      return "Tone: confident, expert, polished. Avoid slang.";
+      return "Tone instruction: Professional, confident, and direct. Avoid slang.";
     case "friendly":
-      return "Tone: warm, approachable, conversational, but still credible.";
+      return "Tone instruction: Warm, approachable, conversational, but still credible.";
     case "persuasive":
-      return "Tone: outcome-driven, benefit-led, action verbs. Strong CTAs.";
+      return "Tone instruction: Outcome-driven, benefit-led, action verbs, and strong CTAs without hype.";
     case "casual":
-      return "Tone: relaxed, easygoing, plain language. Light contractions OK.";
+      return "Tone instruction: Relaxed, easygoing, plain language. Light contractions OK.";
   }
 }
 
 export function buildGigCorePrompt(input: GigInput): GigPromptBundle {
   const system = [
-    `You are a senior ${input.platform} gig copywriter and conversion specialist.`,
-    "Produce a complete gig listing tailored to the provided service, niche, and audience.",
+    "You are a senior freelance platform gig copywriter and conversion rate optimization (CRO) specialist.",
+    "Your goal is to write a high-converting gig listing tailored exactly to the provided niche, audience, and constraints.",
+    `Platform context: ${input.platform}.`,
     toneInstruction(input.preferredTone),
     "",
     JSON_RULES,
     "",
-    "Output contract (TypeScript):",
+    "Output structure (JSON contract):",
     `{
-  "title": string,                       // 40-80 chars, includes a high-intent search keyword
-  "alternativeTitles": string[],         // exactly 5
-  "category": string,
-  "tags": string[],                      // exactly 5, 2-3 lowercase words each
-  "seoKeywords": string[],               // 6-10 buyer search phrases
-  "description": string,                 // 300-600 words, markdown with 3+ paragraphs and bullet lists. End with a clear CTA.
+  "title": "string",
+  "alternativeTitles": ["string", "string", "string"],
+  "category": "string",
+  "tags": ["string", "string", "string"],
+  "seoKeywords": ["string", "string", "string"],
+  "description": "string",
   "packages": {
-    "basic":    { "name": string, "price": number, "deliveryDays": number, "revisions": number, "deliverables": string[], "addOns": string[] },
-    "standard": { "name": string, "price": number, "deliveryDays": number, "revisions": number, "deliverables": string[], "addOns": string[] },
-    "premium":  { "name": string, "price": number, "deliveryDays": number, "revisions": number, "deliverables": string[], "addOns": string[] }
+    "basic": { "name": "string", "price": number, "deliveryDays": number, "revisions": number, "deliverables": ["string", "string", "string"], "addOns": ["string"] },
+    "standard": { "name": "string", "price": number, "deliveryDays": number, "revisions": number, "deliverables": ["string", "string", "string"], "addOns": ["string"] },
+    "premium": { "name": "string", "price": number, "deliveryDays": number, "revisions": number, "deliverables": ["string", "string", "string"], "addOns": ["string"] }
   },
-  "buyerRequirements": string[],         // 3-6 questions you need from the buyer
-  "faqs": [{ "question": string, "answer": string }],  // 4-6 entries
-  "addOnServices": [{ "name": string, "price": number, "description": string }],  // 3-5 entries
-  "thumbnailConcept": string,            // 1-2 sentence visual concept
-  "thumbnailPrompt": string,             // image-gen ready prompt
-  "portfolioSampleIdeas": string[]       // 3-5 concrete deliverable samples
+  "buyerRequirements": ["string"],
+  "faqs": [{ "question": "string", "answer": "string" }],
+  "addOnServices": [{ "name": "string", "price": number, "description": "string" }],
+  "thumbnailConcept": "string",
+  "thumbnailPrompt": "string",
+  "portfolioSampleIdeas": ["string"]
 }`,
     "",
-    "Hard rules:",
-    `- Package prices MUST sit inside the user's range [${input.pricingMin}, ${input.pricingMax}] ${input.pricingCurrency}. Basic ~= pricingMin, premium ~= pricingMax, standard between them.`,
-    "- Basic < standard < premium. Premium price should be at least 2x basic.",
-    "- Each package has at least 3 deliverables.",
-    "- Every tag is 2-3 lowercase words, alphanumeric only.",
-    "- Description uses markdown (## headings and `-` bullets are encouraged).",
-    "- Mention the niche, audience, and buyer result explicitly in the description.",
-    "- Do not promise outcomes you cannot guarantee. No '100% guaranteed', no overnight claims.",
+    "Strict business and system rules:",
+    "1. PRICING RULES:",
+    `- All package prices must fall within the provided input price range [${input.pricingMin}, ${input.pricingMax}] ${input.pricingCurrency}.`,
+    "- Price progression must strictly follow: basic < standard < premium.",
+    "- The premium price MUST be at least 2x the basic price.",
+    "2. DELIVERABLES: Every package tier must contain at least 3 distinct deliverables.",
+    "3. TAGS FORMAT: Every item in the tags array must be exactly 2 to 3 lowercase words, containing alphanumeric characters and spaces only. No special characters or single-word tags.",
+    "4. DESCRIPTION STRUCTURE (ABOUT THIS GIG):",
+    "The description field must follow this exact, clean, scannable structure using basic markdown bolding and bullet points, properly escaped inside the JSON string:",
+    "- Hook: A brief 1-2 sentence question or statement addressing the audience's goal, such as boosting credibility, sales readiness, or online presence.",
+    "- Intro: A single short paragraph stating expertise as a developer, including CMS, interactions, animations, and Figma conversions when relevant.",
+    "- Services Included: A clean bulleted list detailing specific features such as responsive layout, Webflow CMS, advanced animations, SEO-friendly structure, CTA integration, and related deliverables.",
+    "- Why Hire Me: A short bulleted list highlighting professional reliability, on-time delivery, quick response, and consultation details.",
+    "- CTA: A closing line inviting the buyer to send a message to discuss requirements.",
+    "5. QUALITY & ETHICS:",
+    "- Do not use spammy language or hype keywords.",
+    "- Do not include fake guarantees.",
+    "- Do not promise absolute business outcomes you cannot legally guarantee.",
+    "- Do not use phrases like 'I want leads finding' or guarantee customer generation.",
+    "- Focus strictly on technical and design delivery.",
   ].join("\n");
 
   const user = [
-    "Generate the gig listing for the following input:",
-    inputSummary(input),
-    "",
-    "Return the strict JSON now.",
-  ].join("\n");
-
-  return { system, user };
-}
-
-export function buildLeadStrategyPrompt(input: GigInput): GigPromptBundle {
-  const system = [
-    "You are a B2B/B2C lead generation strategist who helps freelancers find buyers off-platform.",
-    "Produce an actionable lead strategy for the given service.",
-    toneInstruction(input.preferredTone),
-    "",
-    JSON_RULES,
-    "",
-    "Output contract (TypeScript):",
-    `{
-  "bestLeadTypes": string[],             // exactly 5 buyer archetypes
-  "targetIndustries": string[],          // exactly 5 industries
-  "googleQueries": string[],             // exactly 10 Google search queries using site: filters and quoted phrases
-  "instagramSearchTerms": string[],      // exactly 8 hashtags/phrases for Instagram
-  "linkedinSearchTerms": string[],       // exactly 8 LinkedIn search strings
-  "googleMapsSearchTerms": string[],     // exactly 5 local-search style terms
-  "manualStrategy": string               // ~200 words, concrete weekly outreach playbook
-}`,
-    "",
-    "Hard rules:",
-    "- googleQueries MUST combine `site:` operators (e.g. site:linkedin.com/in, site:twitter.com, site:reddit.com) with quoted intent phrases.",
-    "- Avoid generic terms — every entry must be specific to the niche.",
-    "- manualStrategy must reference channels, weekly cadence, and message types.",
-  ].join("\n");
-
-  const user = [
-    "Build the lead-generation strategy for the following service:",
+    "Input context:",
     inputSummary(input),
     "",
     "Return the strict JSON now.",
@@ -140,12 +121,12 @@ export function buildOutreachPrompt(input: GigInput): GigPromptBundle {
     "",
     "Output contract (TypeScript):",
     `{
-  "coldEmail": { "subject": string, "body": string },   // body 120-180 words
-  "instagramDm": string,                                // 60-100 words
-  "linkedinMessage": string,                            // 80-140 words
-  "shortPitch": string,                                 // 2-3 sentences, elevator pitch
-  "followUpMessage": string,                            // 60-100 words, polite bump
-  "proposalMessage": string                             // 150-220 words, proposal-style for Upwork/email
+  "coldEmail": { "subject": string, "body": string },
+  "instagramDm": string,
+  "linkedinMessage": string,
+  "shortPitch": string,
+  "followUpMessage": string,
+  "proposalMessage": string
 }`,
     "",
     "Hard rules:",
@@ -154,6 +135,7 @@ export function buildOutreachPrompt(input: GigInput): GigPromptBundle {
     "- No 'Dear Sir/Madam', no 'I hope this email finds you well'.",
     "- No spam triggers ('guaranteed', 'free money', ALL CAPS shouting).",
     "- Close every message with a soft, low-friction CTA.",
+    "- Do not claim you can find leads or guarantee customer generation.",
   ].join("\n");
 
   const user = [

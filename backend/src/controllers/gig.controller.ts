@@ -3,8 +3,17 @@ import { isValidObjectId, type Types } from "mongoose";
 import { customAlphabet } from "nanoid";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok, created } from "../utils/responses.js";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/errors.js";
-import { Gig, type GigContent, type GigDocument, type OutreachContent } from "../models/Gig.model.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../utils/errors.js";
+import {
+  Gig,
+  type GigContent,
+  type GigDocument,
+  type OutreachContent,
+} from "../models/Gig.model.js";
 import { checkAndConsume } from "../services/usage.service.js";
 import { resolveAIConfigForUser } from "../services/ai/config.js";
 import { runGeneration } from "../services/gig/orchestrator.js";
@@ -26,7 +35,7 @@ type UserRequest = Request & { user: NonNullable<Request["user"]> };
 
 const nanoidSlug = customAlphabet(
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-  12
+  12,
 );
 
 const AI_REQUIRED_MESSAGE =
@@ -43,7 +52,7 @@ function ensureObjectId(id: string): void {
 
 async function findOwnedGigOr404(
   userId: Types.ObjectId,
-  id: string
+  id: string,
 ): Promise<GigDocument> {
   ensureObjectId(id);
   const gig = await Gig.findOne({ _id: id, user: userId });
@@ -71,7 +80,7 @@ function serializeListItem(gig: GigDocument) {
     updatedAt: gig.updatedAt,
     share: {
       enabled: gig.share.enabled,
-      slug: gig.share.slug,
+      slug: gig.share.slug ?? null,
       viewCount: gig.share.viewCount,
     },
   };
@@ -96,7 +105,8 @@ function kickOffGeneration(gigId: string): void {
 
 export const listGigs = asyncHandler(async (req: Request, res: Response) => {
   const authedReq = requireUser(req);
-  const { platform, status, archived, search, limit } = req.query as unknown as ListGigsQuery;
+  const { platform, status, archived, search, limit } =
+    req.query as unknown as ListGigsQuery;
 
   const filter: Record<string, unknown> = { user: authedReq.user._id };
   if (platform) filter["input.platform"] = platform;
@@ -117,7 +127,7 @@ export const listGigs = asyncHandler(async (req: Request, res: Response) => {
     .sort({ createdAt: -1 })
     .limit(limit)
     .select(
-      "title input.serviceName input.platform input.niche input.pricingMin input.pricingMax input.pricingCurrency status generationStages generatedBy score.overall archived createdAt updatedAt share"
+      "title input.serviceName input.platform input.niche input.pricingMin input.pricingMax input.pricingCurrency status generationStages generatedBy score.overall archived createdAt updatedAt share",
     );
 
   return ok(res, gigs.map(serializeListItem));
@@ -142,7 +152,7 @@ export const createGig = asyncHandler(async (req: Request, res: Response) => {
     status: "queued",
     generationStages: {
       gig: { status: "pending", error: null },
-      leads: { status: "pending", error: null },
+      leads: { status: "done", error: null },
       outreach: { status: "pending", error: null },
     },
   });
@@ -183,20 +193,22 @@ export const updateGig = asyncHandler(async (req: Request, res: Response) => {
         ...patch,
         packages: patch.packages
           ? {
-              basic: { ...current.packages.basic, ...(patch.packages.basic ?? {}) },
-              standard: { ...current.packages.standard, ...(patch.packages.standard ?? {}) },
-              premium: { ...current.packages.premium, ...(patch.packages.premium ?? {}) },
+              basic: {
+                ...current.packages.basic,
+                ...(patch.packages.basic ?? {}),
+              },
+              standard: {
+                ...current.packages.standard,
+                ...(patch.packages.standard ?? {}),
+              },
+              premium: {
+                ...current.packages.premium,
+                ...(patch.packages.premium ?? {}),
+              },
             }
           : current.packages,
       } as GigContent;
       gig.markModified("content.gig");
-    }
-    if (input.content.leadStrategy && gig.content.leadStrategy) {
-      gig.content.leadStrategy = {
-        ...gig.content.leadStrategy,
-        ...input.content.leadStrategy,
-      };
-      gig.markModified("content.leadStrategy");
     }
     if (input.content.outreach && gig.content.outreach) {
       const patch = input.content.outreach;
@@ -230,39 +242,45 @@ export const deleteGig = asyncHandler(async (req: Request, res: Response) => {
 
 /* ─── Regenerate ─────────────────────────────────────────────── */
 
-export const regenerateGig = asyncHandler(async (req: Request, res: Response) => {
-  const authedReq = requireUser(req);
-  const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
+export const regenerateGig = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authedReq = requireUser(req);
+    const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
 
-  if (!(["completed", "failed", "partial"] as const).includes(
-    gig.status as "completed" | "failed" | "partial"
-  )) {
-    throw new BadRequestError("Gig is still in progress; cannot regenerate yet");
-  }
+    if (
+      !(["completed", "failed", "partial"] as const).includes(
+        gig.status as "completed" | "failed" | "partial",
+      )
+    ) {
+      throw new BadRequestError(
+        "Gig is still in progress; cannot regenerate yet",
+      );
+    }
 
-  if (!resolveAIConfigForUser(authedReq.user)) {
-    throw new BadRequestError(AI_REQUIRED_MESSAGE);
-  }
+    if (!resolveAIConfigForUser(authedReq.user)) {
+      throw new BadRequestError(AI_REQUIRED_MESSAGE);
+    }
 
-  await checkAndConsume(authedReq.user);
+    await checkAndConsume(authedReq.user);
 
-  gig.status = "queued";
-  gig.generationStages = {
-    gig: { status: "pending", error: null },
-    leads: { status: "pending", error: null },
-    outreach: { status: "pending", error: null },
-  };
-  gig.generationMs = null;
-  await gig.save();
+    gig.status = "queued";
+    gig.generationStages = {
+      gig: { status: "pending", error: null },
+      leads: { status: "done", error: null },
+      outreach: { status: "pending", error: null },
+    };
+    gig.generationMs = null;
+    await gig.save();
 
-  kickOffGeneration(String(gig._id));
+    kickOffGeneration(String(gig._id));
 
-  return res.status(202).json({
-    success: true,
-    message: "Gig regeneration queued",
-    data: { gigId: String(gig._id) },
-  });
-});
+    return res.status(202).json({
+      success: true,
+      message: "Gig regeneration queued",
+      data: { gigId: String(gig._id) },
+    });
+  },
+);
 
 /* ─── Improve a single section ───────────────────────────────── */
 
@@ -288,7 +306,7 @@ export const improveGig = asyncHandler(async (req: Request, res: Response) => {
     section,
     gig.input,
     { gig: gig.content.gig, outreach: gig.content.outreach },
-    instructions
+    instructions,
   );
 
   return ok(res, { section, suggestion });
@@ -296,32 +314,34 @@ export const improveGig = asyncHandler(async (req: Request, res: Response) => {
 
 /* ─── Duplicate ──────────────────────────────────────────────── */
 
-export const duplicateGig = asyncHandler(async (req: Request, res: Response) => {
-  const authedReq = requireUser(req);
-  const original = await findOwnedGigOr404(authedReq.user._id, req.params.id);
+export const duplicateGig = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authedReq = requireUser(req);
+    const original = await findOwnedGigOr404(authedReq.user._id, req.params.id);
 
-  if (!resolveAIConfigForUser(authedReq.user)) {
-    throw new BadRequestError(AI_REQUIRED_MESSAGE);
-  }
+    if (!resolveAIConfigForUser(authedReq.user)) {
+      throw new BadRequestError(AI_REQUIRED_MESSAGE);
+    }
 
-  await checkAndConsume(authedReq.user);
+    await checkAndConsume(authedReq.user);
 
-  const clone = await Gig.create({
-    user: authedReq.user._id,
-    title: `Copy of ${original.title || original.input.serviceName}`,
-    input: original.toObject().input,
-    status: "queued",
-    generationStages: {
-      gig: { status: "pending", error: null },
-      leads: { status: "pending", error: null },
-      outreach: { status: "pending", error: null },
-    },
-  });
+    const clone = await Gig.create({
+      user: authedReq.user._id,
+      title: `Copy of ${original.title || original.input.serviceName}`,
+      input: original.toObject().input,
+      status: "queued",
+      generationStages: {
+        gig: { status: "pending", error: null },
+        leads: { status: "done", error: null },
+        outreach: { status: "pending", error: null },
+      },
+    });
 
-  kickOffGeneration(String(clone._id));
+    kickOffGeneration(String(clone._id));
 
-  return created(res, { gigId: String(clone._id) }, "Gig duplicated");
-});
+    return created(res, { gigId: String(clone._id) }, "Gig duplicated");
+  },
+);
 
 /* ─── Share ──────────────────────────────────────────────────── */
 
@@ -343,7 +363,7 @@ export const updateShare = asyncHandler(async (req: Request, res: Response) => {
     gig.share.enabled = true;
   } else {
     gig.share.enabled = false;
-    gig.share.slug = null;
+    gig.share.slug = undefined;
   }
   await gig.save();
 
@@ -355,7 +375,7 @@ export const updateShare = asyncHandler(async (req: Request, res: Response) => {
 
   return ok(res, {
     enabled: gig.share.enabled,
-    slug: gig.share.slug,
+    slug: gig.share.slug ?? null,
     url,
     viewCount: gig.share.viewCount,
   });
@@ -363,64 +383,74 @@ export const updateShare = asyncHandler(async (req: Request, res: Response) => {
 
 /* ─── Public ─────────────────────────────────────────────────── */
 
-export const getPublicGig = asyncHandler(async (req: Request, res: Response) => {
-  const slug = req.params.slug;
-  if (!slug || typeof slug !== "string") throw new NotFoundError("Gig not found");
-  const gig = await Gig.findOne({ "share.slug": slug, "share.enabled": true });
-  if (!gig) throw new NotFoundError("Gig not found");
+export const getPublicGig = asyncHandler(
+  async (req: Request, res: Response) => {
+    const slug = req.params.slug;
+    if (!slug || typeof slug !== "string")
+      throw new NotFoundError("Gig not found");
+    const gig = await Gig.findOne({
+      "share.slug": slug,
+      "share.enabled": true,
+    });
+    if (!gig) throw new NotFoundError("Gig not found");
 
-  Gig.updateOne({ _id: gig._id }, { $inc: { "share.viewCount": 1 } }).catch(
-    () => undefined
-  );
+    Gig.updateOne({ _id: gig._id }, { $inc: { "share.viewCount": 1 } }).catch(
+      () => undefined,
+    );
 
-  return ok(res, {
-    title: gig.title,
-    input: {
-      serviceName: gig.input.serviceName,
-      platform: gig.input.platform,
-      niche: gig.input.niche,
-      targetAudience: gig.input.targetAudience,
-      pricingMin: gig.input.pricingMin,
-      pricingMax: gig.input.pricingMax,
-      pricingCurrency: gig.input.pricingCurrency,
-      deliveryTime: gig.input.deliveryTime,
-    },
-    content: gig.content,
-    score: gig.score,
-    status: gig.status,
-    generatedBy: gig.generatedBy,
-    createdAt: gig.createdAt,
-    share: { viewCount: gig.share.viewCount + 1 },
-  });
-});
+    return ok(res, {
+      title: gig.title,
+      input: {
+        serviceName: gig.input.serviceName,
+        platform: gig.input.platform,
+        niche: gig.input.niche,
+        targetAudience: gig.input.targetAudience,
+        pricingMin: gig.input.pricingMin,
+        pricingMax: gig.input.pricingMax,
+        pricingCurrency: gig.input.pricingCurrency,
+        deliveryTime: gig.input.deliveryTime,
+      },
+      content: gig.content,
+      score: gig.score,
+      status: gig.status,
+      generatedBy: gig.generatedBy,
+      createdAt: gig.createdAt,
+      share: { viewCount: gig.share.viewCount + 1 },
+    });
+  },
+);
 
 /* ─── Export ─────────────────────────────────────────────────── */
 
-export const exportGigPdf = asyncHandler(async (req: Request, res: Response) => {
-  const authedReq = requireUser(req);
-  const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
-  const buffer = await renderGigPdf(gig);
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="${safeFilename(gig.title || gig.input.serviceName, "pdf")}"`
-  );
-  res.setHeader("Content-Length", buffer.length.toString());
-  res.end(buffer);
-});
+export const exportGigPdf = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authedReq = requireUser(req);
+    const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
+    const buffer = await renderGigPdf(gig);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeFilename(gig.title || gig.input.serviceName, "pdf")}"`,
+    );
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.end(buffer);
+  },
+);
 
-export const exportGigDocx = asyncHandler(async (req: Request, res: Response) => {
-  const authedReq = requireUser(req);
-  const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
-  const buffer = await renderGigDocx(gig);
-  res.setHeader(
-    "Content-Type",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  );
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="${safeFilename(gig.title || gig.input.serviceName, "docx")}"`
-  );
-  res.setHeader("Content-Length", buffer.length.toString());
-  res.end(buffer);
-});
+export const exportGigDocx = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authedReq = requireUser(req);
+    const gig = await findOwnedGigOr404(authedReq.user._id, req.params.id);
+    const buffer = await renderGigDocx(gig);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeFilename(gig.title || gig.input.serviceName, "docx")}"`,
+    );
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.end(buffer);
+  },
+);

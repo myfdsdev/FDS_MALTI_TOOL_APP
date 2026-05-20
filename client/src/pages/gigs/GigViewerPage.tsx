@@ -46,7 +46,6 @@ export default function GigViewerPage() {
   const allFailed =
     gig.status === "failed" ||
     (gig.generationStages.gig.status === "failed" &&
-      gig.generationStages.leads.status === "failed" &&
       gig.generationStages.outreach.status === "failed");
 
   if (gig.status === "queued" || gig.status === "processing") {
@@ -57,7 +56,7 @@ export default function GigViewerPage() {
     );
   }
 
-  if (allFailed && !gig.content.gig && !gig.content.leadStrategy && !gig.content.outreach) {
+  if (allFailed && !gig.content.gig && !gig.content.outreach) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 md:px-8">
         <Link

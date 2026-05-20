@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import {
   ArrowRight,
   Briefcase,
+  BriefcaseBusiness,
   FileText,
   FileUser,
   History,
@@ -28,10 +29,18 @@ interface Shortcut {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   image: string;
-  workspace: WorkspaceKey;
+  workspace?: WorkspaceKey;
 }
 
 const SHORTCUTS: Shortcut[] = [
+  {
+    to: "/gigs",
+    title: "Gigs",
+    description: "Create freelance gig listings, packages, FAQs, thumbnails, and outreach copy.",
+    icon: BriefcaseBusiness,
+    image:
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=60",
+  },
   {
     to: "/business-ideas",
     title: "50+ AI tools",
@@ -102,7 +111,9 @@ export default function Dashboard() {
   const { data: usage } = useUsage();
   const { data: history, isLoading: historyLoading } = useHistory({ page: 1, limit: 6 });
   const { isWorkspaceDisabled } = useFeatureFlags();
-  const visibleShortcuts = SHORTCUTS.filter((s) => !isWorkspaceDisabled(s.workspace));
+  const visibleShortcuts = SHORTCUTS.filter(
+    (s) => !s.workspace || !isWorkspaceDisabled(s.workspace),
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">

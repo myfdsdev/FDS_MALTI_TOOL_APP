@@ -15,7 +15,6 @@ The feature helps a user turn a service idea into a complete marketplace-ready g
 - Add-on services.
 - Thumbnail concept and image prompt.
 - Portfolio sample ideas.
-- Lead search strategy.
 - Outreach messages for email, Instagram, LinkedIn, follow-up, and proposals.
 - A conversion score with improvement suggestions.
 
@@ -30,7 +29,7 @@ This feature adds a new Gigs section to the app:
 - Backend gig model, routes, controller, validators, AI orchestration, scoring, PDF export, and DOCX export.
 - React Query client API for listing, creating, improving, sharing, duplicating, exporting, and viewing gigs.
 - Multi-step gig input form.
-- Gig viewer with sections for title, packages, description, FAQs, leads, outreach, and score.
+- Gig viewer with sections for title, packages, description, FAQs, outreach, thumbnail ideas, portfolio ideas, and score.
 
 ## User Workflow
 
@@ -43,9 +42,8 @@ This feature adds a new Gigs section to the app:
    - Pricing and currency.
    - Review and submit.
 4. Backend creates a queued gig record.
-5. AI generation runs asynchronously in three stages:
+5. AI generation runs asynchronously in two active stages:
    - Gig content.
-   - Lead strategy.
    - Outreach messages.
 6. User lands on the gig viewer page.
 7. The viewer shows progress while generation is running.
@@ -171,11 +169,10 @@ Important fields:
 - `title`: display title.
 - `input`: original form input.
 - `content.gig`: generated gig listing.
-- `content.leadStrategy`: generated lead search strategy.
 - `content.outreach`: generated outreach messages.
 - `score`: deterministic score and suggestions.
 - `status`: `queued`, `processing`, `partial`, `completed`, or `failed`.
-- `generationStages`: per-stage status for gig, leads, and outreach.
+- `generationStages`: per-stage status for gig and outreach. The legacy `leads` stage remains for backward compatibility but is not generated or displayed.
 - `generatedBy`: `ai`, `mock`, or `null`.
 - `generationMs`: generation time.
 - `share.enabled`: public sharing flag.
@@ -208,7 +205,7 @@ flowchart TD
   A["runGeneration(gigId)"] --> B["Load gig and user"]
   B --> C["Resolve AI config using AI_API_KEY or user key"]
   C --> D["Mark status processing"]
-  D --> E["Run gig, leads, outreach AI calls"]
+  D --> E["Run gig and outreach AI calls"]
   E --> F["Persist each stage independently"]
   F --> G{"How many stages succeeded?"}
   G -->|3| H["status completed"]
@@ -241,13 +238,12 @@ flowchart TD
 
 The feature uses a fire-and-forget generation pattern. When the user submits the form, the API immediately creates a queued gig record and returns a `gigId`. The frontend navigates to the viewer page while the backend keeps working in the background.
 
-The orchestrator runs three AI tasks:
+The orchestrator runs two active AI tasks:
 
 - Generate the core gig listing.
-- Generate the lead strategy.
 - Generate outreach messages.
 
-Each task is saved independently. This means one failed AI step does not destroy the whole gig. If all stages pass, the gig becomes `completed`. If only some pass, it becomes `partial`. If all fail, it becomes `failed`.
+Each task is saved independently. This means one failed AI step does not destroy the whole gig. If both active stages pass, the gig becomes `completed`. If only one passes, it becomes `partial`. If both fail, it becomes `failed`.
 
 The viewer page can show partial results, progress, and failed stage messages. This is useful because AI calls can fail independently.
 
@@ -259,9 +255,10 @@ AI is used for:
 
 - Core gig copy.
 - Package generation.
-- Lead strategy.
 - Outreach messages.
 - Section improvement.
+
+AI is not used for lead finding. The system must not generate search queries, lead lists, or customer-finding guarantees.
 
 AI must use the existing app setup:
 
@@ -295,7 +292,7 @@ Use this checklist when reviewing the feature:
 - Submitting a valid form creates a queued gig.
 - Missing AI config shows a useful error.
 - Gig viewer shows generation progress.
-- Completed gig shows title, packages, description, FAQs, leads, outreach, and score.
+- Completed gig shows title, packages, description, FAQs, outreach, thumbnail ideas, portfolio ideas, and score.
 - Improve section works only after required content exists.
 - Duplicate creates a new queued gig.
 - Regenerate is blocked while generation is already running.

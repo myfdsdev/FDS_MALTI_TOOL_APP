@@ -121,7 +121,7 @@ export interface GigGenerationStages {
 
 export interface GigShare {
   enabled: boolean;
-  slug: string | null;
+  slug?: string | null;
   viewCount: number;
 }
 
@@ -305,7 +305,7 @@ const generationStagesSchema = new Schema<GigGenerationStages>(
 const shareSchema = new Schema<GigShare>(
   {
     enabled: { type: Boolean, default: false },
-    slug: { type: String, default: null },
+    slug: { type: String, default: undefined },
     viewCount: { type: Number, default: 0, min: 0 },
   },
   { _id: false }
@@ -345,7 +345,53 @@ const gigSchema = new Schema<GigDocument>(
 gigSchema.index({ user: 1, createdAt: -1 });
 gigSchema.index({ user: 1, status: 1 });
 gigSchema.index({ user: 1, "input.platform": 1 });
-gigSchema.index({ "share.slug": 1 }, { unique: true, sparse: true });
+const SHARE_SLUG_INDEX_NAME = "gig_share_slug_unique";
+
+gigSchema.index(
+  { "share.slug": 1 },
+  {
+    name: SHARE_SLUG_INDEX_NAME,
+    unique: true,
+    partialFilterExpression: { "share.slug": { $type: "string" } },
+  }
+);
 
 export const Gig: Model<GigDocument> =
   mongoose.models.Gig || mongoose.model<GigDocument>("Gig", gigSchema);
+
+type MongoIndexInfo = {
+  name?: string;
+  key?: Record<string, unknown>;
+  unique?: boolean;
+  partialFilterExpression?: Record<string, unknown>;
+};
+
+const isShareSlugIndex = (index: MongoIndexInfo): boolean =>
+  index.key?.["share.slug"] === 1 && Object.keys(index.key).length === 1;
+
+const isDesiredShareSlugIndex = (index: MongoIndexInfo): boolean =>
+  index.name === SHARE_SLUG_INDEX_NAME &&
+  index.unique === true &&
+  JSON.stringify(index.partialFilterExpression) ===
+    JSON.stringify({ "share.slug": { $type: "string" } });
+
+export const ensureGigShareSlugIndex = async (): Promise<void> => {
+  await Gig.updateMany({ "share.slug": null }, { $unset: { "share.slug": "" } });
+
+  const indexes = (await Gig.collection.indexes()) as MongoIndexInfo[];
+  const shareSlugIndexes = indexes.filter(isShareSlugIndex);
+
+  for (const index of shareSlugIndexes) {
+    if (!index.name || isDesiredShareSlugIndex(index)) continue;
+    await Gig.collection.dropIndex(index.name);
+  }
+
+  await Gig.collection.createIndex(
+    { "share.slug": 1 },
+    {
+      name: SHARE_SLUG_INDEX_NAME,
+      unique: true,
+      partialFilterExpression: { "share.slug": { $type: "string" } },
+    }
+  );
+};

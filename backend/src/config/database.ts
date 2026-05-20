@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
+import { ensureGigShareSlugIndex } from "../models/Gig.model.js";
 
 mongoose.set("strictQuery", true);
 
@@ -11,6 +12,7 @@ export const connectDatabase = async (): Promise<void> => {
       socketTimeoutMS: 45_000,
       maxPoolSize: 10,
     });
+    await ensureGigShareSlugIndex();
     logger.info("✅ MongoDB connected");
   } catch (err) {
     logger.fatal({ err }, "❌ MongoDB connection failed");

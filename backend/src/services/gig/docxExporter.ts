@@ -126,7 +126,6 @@ function descriptionParagraphs(description: string): Paragraph[] {
 
 export async function renderGigDocx(gig: GigDocument): Promise<Buffer> {
   const c = gig.content.gig;
-  const leads = gig.content.leadStrategy;
   const outreach = gig.content.outreach;
 
   const children: Array<Paragraph | Table> = [];
@@ -210,24 +209,6 @@ export async function renderGigDocx(gig: GigDocument): Promise<Buffer> {
       children.push(h2("Portfolio Sample Ideas"));
       c.portfolioSampleIdeas.forEach((s) => children.push(bullet(s)));
     }
-  }
-
-  if (leads) {
-    children.push(h2("Lead Strategy"));
-    children.push(h3("Best lead types"));
-    leads.bestLeadTypes.forEach((s) => children.push(bullet(s)));
-    children.push(h3("Target industries"));
-    leads.targetIndustries.forEach((s) => children.push(bullet(s)));
-    children.push(h3("Google search queries"));
-    leads.googleQueries.forEach((s) => children.push(bullet(s)));
-    children.push(h3("Instagram search terms"));
-    leads.instagramSearchTerms.forEach((s) => children.push(bullet(s)));
-    children.push(h3("LinkedIn search terms"));
-    leads.linkedinSearchTerms.forEach((s) => children.push(bullet(s)));
-    children.push(h3("Google Maps search terms"));
-    leads.googleMapsSearchTerms.forEach((s) => children.push(bullet(s)));
-    children.push(h3("Manual strategy"));
-    children.push(p(leads.manualStrategy));
   }
 
   if (outreach) {

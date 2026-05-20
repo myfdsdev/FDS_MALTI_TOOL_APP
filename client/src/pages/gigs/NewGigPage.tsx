@@ -12,7 +12,6 @@ const PERKS = [
   "SEO title, 5 alternatives, tags & keywords tailored to your platform",
   "Markdown gig description optimized for conversion",
   "Buyer requirements, FAQs, add-ons, thumbnail concept & AI prompt",
-  "Lead strategy: search queries for Google, Maps, IG & LinkedIn",
   "Outreach pack: cold email, IG DM, LinkedIn message, follow-up, proposal",
 ];
 

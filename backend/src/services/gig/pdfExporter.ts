@@ -210,35 +210,9 @@ function renderExtras(gig: GigDocument): ReactElement {
   return e(Page, { size: "A4", style: styles.page }, ...kids);
 }
 
-function renderLeadsAndOutreach(gig: GigDocument): ReactElement {
-  const leads = gig.content.leadStrategy;
+function renderOutreach(gig: GigDocument): ReactElement {
   const outreach = gig.content.outreach;
   const kids: ReactElement[] = [];
-
-  if (leads) {
-    kids.push(text(styles.h2, "Lead Strategy"));
-
-    kids.push(text(styles.h3, "Best lead types"));
-    bulletList(leads.bestLeadTypes).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "Target industries"));
-    bulletList(leads.targetIndustries).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "Google search queries"));
-    bulletList(leads.googleQueries).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "Instagram search terms"));
-    bulletList(leads.instagramSearchTerms).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "LinkedIn search terms"));
-    bulletList(leads.linkedinSearchTerms).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "Google Maps search terms"));
-    bulletList(leads.googleMapsSearchTerms).forEach((b) => kids.push(b));
-
-    kids.push(text(styles.h3, "Manual strategy"));
-    kids.push(text(styles.body, leads.manualStrategy));
-  }
 
   if (outreach) {
     kids.push(text(styles.h2, "Outreach"));
@@ -262,8 +236,8 @@ function renderLeadsAndOutreach(gig: GigDocument): ReactElement {
     kids.push(text(styles.body, outreach.proposalMessage));
   }
 
-  if (!leads && !outreach) {
-    kids.push(text(styles.body, "No lead or outreach content available yet."));
+  if (!outreach) {
+    kids.push(text(styles.body, "No outreach content available yet."));
   }
 
   return e(Page, { size: "A4", style: styles.page }, ...kids);
@@ -276,7 +250,7 @@ export async function renderGigPdf(gig: GigDocument): Promise<Buffer> {
     renderPage1(gig),
     renderDescriptionAndPackages(gig),
     renderExtras(gig),
-    renderLeadsAndOutreach(gig)
+    renderOutreach(gig)
   );
   return renderToBuffer(doc);
 }

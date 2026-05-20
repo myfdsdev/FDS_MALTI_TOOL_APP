@@ -4,12 +4,10 @@ import { generateWithProvider, type ResolvedAIConfig } from "../ai/providers.js"
 import type {
   GigContent,
   GigInput,
-  LeadStrategy,
   OutreachContent,
 } from "../../models/Gig.model.js";
 import {
   buildGigCorePrompt,
-  buildLeadStrategyPrompt,
   buildOutreachPrompt,
   type GigPromptBundle,
 } from "./prompts.js";
@@ -21,17 +19,21 @@ const packageSchema = z.object({
   price: z.coerce.number().nonnegative(),
   deliveryDays: z.coerce.number().int().nonnegative(),
   revisions: z.coerce.number().int().nonnegative(),
-  deliverables: z.array(z.string().min(1)).min(1),
+  deliverables: z.array(z.string().min(1)).min(3),
   addOns: z.array(z.string()).default([]),
 });
 
+const tagSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(?: [a-z0-9]+){1,2}$/, "Tags must be 2-3 lowercase alphanumeric words");
+
 const gigContentZ = z.object({
   title: z.string().min(1),
-  alternativeTitles: z.array(z.string().min(1)).min(1),
+  alternativeTitles: z.array(z.string().min(1)).length(3),
   category: z.string().min(1),
-  tags: z.array(z.string().min(1)).min(1),
-  seoKeywords: z.array(z.string().min(1)).min(1),
-  description: z.string().min(50),
+  tags: z.array(tagSchema).length(3),
+  seoKeywords: z.array(z.string().min(1)).length(3),
+  description: z.string().min(100),
   packages: z.object({
     basic: packageSchema,
     standard: packageSchema,
@@ -58,16 +60,6 @@ const gigContentZ = z.object({
   thumbnailConcept: z.string().min(1),
   thumbnailPrompt: z.string().min(1),
   portfolioSampleIdeas: z.array(z.string().min(1)).min(1),
-});
-
-const leadStrategyZ = z.object({
-  bestLeadTypes: z.array(z.string().min(1)).min(1),
-  targetIndustries: z.array(z.string().min(1)).min(1),
-  googleQueries: z.array(z.string().min(1)).min(1),
-  instagramSearchTerms: z.array(z.string().min(1)).min(1),
-  linkedinSearchTerms: z.array(z.string().min(1)).min(1),
-  googleMapsSearchTerms: z.array(z.string().min(1)).min(1),
-  manualStrategy: z.string().min(50),
 });
 
 const outreachZ = z.object({
@@ -170,20 +162,6 @@ export async function generateGigCore(
   });
   // Cast: Zod output structure matches GigContent. addOns is defaulted.
   return out as GigContent;
-}
-
-export async function generateLeadStrategy(
-  config: ResolvedAIConfig,
-  input: GigInput
-): Promise<LeadStrategy> {
-  const prompt = buildLeadStrategyPrompt(input);
-  const out = await runWithRetry({
-    config,
-    prompt,
-    schema: leadStrategyZ,
-    label: "lead strategy",
-  });
-  return out;
 }
 
 export async function generateOutreach(

@@ -70,16 +70,6 @@ const gigContentPatchSchema = z.object({
   portfolioSampleIdeas: z.array(z.string()).optional(),
 });
 
-const leadStrategyPatchSchema = z.object({
-  bestLeadTypes: z.array(z.string()).optional(),
-  targetIndustries: z.array(z.string()).optional(),
-  googleQueries: z.array(z.string()).optional(),
-  instagramSearchTerms: z.array(z.string()).optional(),
-  linkedinSearchTerms: z.array(z.string()).optional(),
-  googleMapsSearchTerms: z.array(z.string()).optional(),
-  manualStrategy: z.string().optional(),
-});
-
 const outreachMessageSchema = z.object({
   subject: z.string(),
   body: z.string(),
@@ -101,7 +91,6 @@ export const updateGigSchema = z
     content: z
       .object({
         gig: gigContentPatchSchema.optional(),
-        leadStrategy: leadStrategyPatchSchema.optional(),
         outreach: outreachPatchSchema.optional(),
       })
       .optional(),

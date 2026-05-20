@@ -8,7 +8,7 @@ import type { GigGenerationStages, StageStatus } from "@/types/gigs";
 
 const STAGE_LABEL: Record<keyof GigGenerationStages, string> = {
   gig: "Crafting your gig",
-  leads: "Building lead strategy",
+  leads: "Legacy stage",
   outreach: "Writing outreach messages",
 };
 
@@ -56,7 +56,7 @@ export function GenerationProgressView({ stages }: Props) {
     return () => window.clearInterval(interval);
   }, []);
 
-  const order: (keyof GigGenerationStages)[] = ["gig", "leads", "outreach"];
+  const order: (keyof GigGenerationStages)[] = ["gig", "outreach"];
 
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-12 text-center">
@@ -70,8 +70,8 @@ export function GenerationProgressView({ stages }: Props) {
 
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">Crafting your gig</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Our AI is generating your gig copy, lead strategy, and outreach messages. This usually takes
-        about 30 seconds.
+        Our AI is generating your gig copy, packages, FAQs, thumbnail ideas, portfolio ideas, and
+        outreach messages. This usually takes about 30 seconds.
       </p>
 
       <Card className="mt-8 w-full text-left">

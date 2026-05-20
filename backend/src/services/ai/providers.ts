@@ -14,6 +14,8 @@ export interface ProviderGenerationResult {
 }
 
 const anthropicClients = new Map<string, Anthropic>();
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const MAX_FETCH_ATTEMPTS = 3;
 
 function anthropicClientFor(apiKey: string): Anthropic {
   let client = anthropicClients.get(apiKey);
@@ -22,6 +24,37 @@ function anthropicClientFor(apiKey: string): Anthropic {
     anthropicClients.set(apiKey, client);
   }
   return client;
+}
+
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchWithRetries(
+  label: string,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let lastError: string | null = null;
+
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+    const response = await fetch(url, init);
+    if (response.ok) return response;
+
+    const body = await response.text().catch(() => "");
+    const bodyPreview = body ? `: ${body.slice(0, 300)}` : "";
+    lastError = `${label} request failed with ${response.status}${bodyPreview}`;
+
+    if (
+      attempt === MAX_FETCH_ATTEMPTS ||
+      !RETRYABLE_STATUS_CODES.has(response.status)
+    ) {
+      throw new Error(lastError);
+    }
+
+    await wait(750 * attempt);
+  }
+
+  throw new Error(lastError || `${label} request failed`);
 }
 
 export async function generateWithProvider(
@@ -75,7 +108,7 @@ async function generateWithOpenAICompatible(
 ): Promise<ProviderGenerationResult> {
   const baseUrl = (config.baseUrl || "https://api.openai.com/v1").replace(/\/$/, "");
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetchWithRetries("OpenAI-compatible", `${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -90,10 +123,6 @@ async function generateWithOpenAICompatible(
       ],
     }),
   });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI-compatible request failed with ${response.status}`);
-  }
 
   const data = (await response.json()) as {
     choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
@@ -126,7 +155,7 @@ async function generateWithGemini(
     config.model,
   )}:generateContent?key=${encodeURIComponent(config.apiKey)}`;
 
-  const response = await fetch(endpoint, {
+  const response = await fetchWithRetries("Gemini", endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -144,10 +173,6 @@ async function generateWithGemini(
       },
     }),
   });
-
-  if (!response.ok) {
-    throw new Error(`Gemini request failed with ${response.status}`);
-  }
 
   const data = (await response.json()) as {
     candidates?: Array<{
